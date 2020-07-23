@@ -1,0 +1,7 @@
+{
+  "restart": {
+    "exclude": ["^lib/", "^public/"],
+    "include": ["\\.js$", "\\.ts", "\\.json", "\\.html"]
+  },
+  "throttle": 5000
+}
