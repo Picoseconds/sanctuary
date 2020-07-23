@@ -76,7 +76,7 @@ export default class Game {
 
       for (let gameObject of this.state.gameObjects) {
         if (Physics.collideGameObjects(gameObject, newGameObject)){
-          i--
+          i--;
           continue outerLoop;
         }
       }
