@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Sanctuary MooMoo Server" />
+    <meta
+      property="og:description"
+      content="v{{ version }} running on node {{ nodeVersion }}"
+    />
+    <meta property="og:url" content="/sanctuary" />
+
+    <title>Sanctuary v{{ version }}</title>
+    <style>
+      * {
+        padding: 0;
+        margin: 0;
+      }
+
+      html,
+      body {
+        background: #d5eaff;
+      }
+
+      .box {
+        color: #090909;
+
+        font-family: "Fira Sans", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue",
+          sans-serif;
+
+        position: absolute;
+        top: 50%;
+        left: 50%;
+
+        transform: translate(-50%, -50%);
+        /* font-size: 3vmin; */
+
+        padding: 20px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 5.3px 14.4px -10px rgba(0, 0, 0, 0.017),
+          0 14.5px 39.8px -13px rgba(0, 0, 0, 0.025),
+          0 35px 95.9px -13px rgba(0, 0, 0, 0.033),
+          0 116px 318px -13px rgba(0, 0, 0, 0.05);
+        transition: 0.4s;
+      }
+
+      .box:hover {
+        transform: translate(-50%, -50%) scale(1.1);
+      }
+    </style>
+
+    <script>
+      window.onload = () => {
+        let uptimeElem = document.getElementById("uptime");
+        let uptimeSocket = new WebSocket(
+          `ws://${window.location.host}/uptimeSocket`
+        );
+
+        uptimeSocket.onmessage = msg => {
+          uptimeElem.textContent = "Uptime: " + msg;
+        };
+      };
+    </script>
+  </head>
+
+  <body>
+    <div class="box">
+      <h2>Sanctuary v{{ version }} running on node {{ nodeVersion }}</h2>
+      <br />
+      <span id="uptime">Uptime: {{ uptime }}</span>
+    </div>
+  </body>
+</html>
