@@ -75,10 +75,11 @@ export default class Game {
       );
 
       for (let gameObject of this.state.gameObjects) {
-        if (Physics.collideGameObjects(gameObject, newGameObject))
+        if (Physics.collideGameObjects(gameObject, newGameObject)){
+          i--;
           continue outerLoop;
+        }
       }
-
       this.state.gameObjects.push(newGameObject);
     }
   }
