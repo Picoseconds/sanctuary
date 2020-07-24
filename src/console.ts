@@ -146,6 +146,12 @@ dispatcher.register(
                   player.wood = resourceAmount;
                   break;
 
+                case "health":
+                case "hp":
+                case "hitpoints":
+                  player.health = resourceAmount;
+                  break;
+
                 default:
                   error("Invalid resource type " + resourceType);
                   break;

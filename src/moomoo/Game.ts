@@ -64,22 +64,26 @@ export default class Game {
     outerLoop: for (let i = 0; i < 200; i++) {
       let gameObjectType =
         gameObjectTypes[Math.floor(Math.random() * gameObjectTypes.length)];
-      let newGameObject = new GameObject(
-        this.state.gameObjects.length > 0
-          ? Math.max(...this.state.gameObjects.map((gameObj) => gameObj.id)) + 1
-          : 0,
-        randomPos(12e3, 12e3),
-        0,
-        gameObjectSizes[gameObjectType],
-        gameObjectType
-      );
+      let sizes = gameObjectSizes[gameObjectType];
 
-      for (let gameObject of this.state.gameObjects) {
-        if (Physics.collideGameObjects(gameObject, newGameObject))
-          continue outerLoop;
+      if (sizes) {
+        let newGameObject = new GameObject(
+          this.state.gameObjects.length > 0
+            ? Math.max(...this.state.gameObjects.map((gameObj) => gameObj.id)) + 1
+            : 0,
+          randomPos(12e3, 12e3),
+          0,
+          sizes[Math.floor(Math.random() * sizes.length)],
+          gameObjectType
+        );
+
+        for (let gameObject of this.state.gameObjects) {
+          if (Physics.collideGameObjects(gameObject, newGameObject))
+            continue outerLoop;
+        }
+
+        this.state.gameObjects.push(newGameObject);
       }
-
-      this.state.gameObjects.push(newGameObject);
     }
   }
 
@@ -176,7 +180,7 @@ export default class Game {
 
   async banClient(client: Client) {
     if (this.db) {
-      if (!(await (await (await this.db.get("bannedIPs")).includes(client.ip)).value())){
+      if (!(await (await (await this.db.get("bannedIPs")).includes(client.ip)).value())) {
         await (await (await this.db.get("bannedIPs")).push(client.ip)).write();
       }
 
@@ -336,7 +340,7 @@ export default class Game {
                     },
                     []
                   )
-                ]
+              ]
             )
           )
         );
@@ -589,7 +593,7 @@ export default class Game {
       case PacketType.CHAT:
         for (let badWord of badWords) {
           if (packet.data[0].includes(badWord))
-            packet.data[0] = packet.data[0].replace(new RegExp(badWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), "M" + "o".repeat(badWord.length - 1));
+            packet.data[0] = packet.data[0].replace(new RegExp(`\\b${badWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'g'), "M" + "o".repeat(badWord.length - 1));
         }
 
         if (packet.data[0].startsWith("/")) {

@@ -15,8 +15,8 @@ enum GameObjectType {
   Cactus
 }
 
-let gameObjectSizes: Partial<Record<GameObjectType, number>> = { };
-gameObjectSizes[GameObjectType.Tree] = 140;
+let gameObjectSizes: Partial<Record<GameObjectType, number[]>> = { };
+gameObjectSizes[GameObjectType.Tree] = [150, 160, 165, 175];
 
 gameObjectSizes = Object.freeze(gameObjectSizes);
 

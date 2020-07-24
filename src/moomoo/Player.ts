@@ -100,7 +100,6 @@ export default class Player extends Entity {
 
   public set points(newPoints: number) {
     let packetFactory = PacketFactory.getInstance();
-    console.log("send");
     this.client?.socket.send(
       packetFactory.serializePacket(
         new Packet(PacketType.UPDATE_STATS, ["points", newPoints, 1])

@@ -1,3 +1,5 @@
+import weapons from './weapons.json';
+
 /**
  * An enum containing the names of all the items. Saves you the effort of differentiating weapon items and other items
  */
@@ -79,61 +81,14 @@ function getHitTime(weapon: Weapons) {
   }
 }
 
-function getWeaponAttackDetails(item: Weapons) {
-  switch (item) {
-    case Weapons.ToolHammer:
-      return { kbMultiplier: 1, attackRange: 10 };
-    default:
-      return { kbMultiplier: 2.1, attackRange: 10 };
-  }
+function getWeaponAttackDetails(item: Weapons): AttackDetails {
+  let weapon = weapons.find(weapon => weapon.id == item);
+  return { kbMultiplier: weapon?.knock || 1, attackRange: weapon?.range || 10 };
 }
 
 function getWeaponDamage(item: Weapons) {
-  switch (item) {
-    case Weapons.ToolHammer:
-      return 25;
-
-    case Weapons.Axe:
-      return 560;
-
-    case Weapons.Bat:
-      return 450;
-
-    case Weapons.Bow:
-      return 785;
-
-    case Weapons.Crossbow:
-      return 900;
-
-    case Weapons.Daggers:
-      return 225;
-
-    case Weapons.GreatHammer:
-      return 560;
-
-    case Weapons.McGrabby:
-      return 900;
-
-    case Weapons.Musket:
-      return 1685;
-
-    case Weapons.Polearm:
-      return 900;
-
-    case Weapons.RepeaterCrossbow:
-      return 450;
-
-    case Weapons.Shield:
-      throw 'Shield does not have damage!';
-
-    case Weapons.Stick:
-      return 560;
-
-    case Weapons.Sword:
-      return 450;
-  }
-
-  return 0;
+  let weapon = weapons.find(weapon => weapon.id == item);
+  return weapon?.dmg || 0;
 }
 
 function getWeaponId(item: Weapons): number {

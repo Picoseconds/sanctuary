@@ -77,4 +77,4 @@ server.on('upgrade', function upgrade(request, socket, head) {
 
 console.startConsole();
 
-server.listen(3000, () => console.log(`Sanctuary listening at https://localhost:${port}`));
+server.listen(port || 3000, () => console.log(`Sanctuary listening at https://localhost:${port || 3000}`));

@@ -29,7 +29,7 @@ function movePlayer(player: Player, delta: number) {
   if (player.velocity.x || player.velocity.y) {
     let angle = Math.atan2(player.velocity.y, player.velocity.x);
     tryMovePlayer(player, delta, player.velocity.x, player.velocity.y);
-    player.velocity = player.velocity.multiply(.85, .85);
+    player.velocity = player.velocity.multiply(0.993 ** delta, 0.993 ** delta);
   }
 }
 
@@ -51,7 +51,7 @@ function checkAttack(player: Player, angle: number, players: Player[]) {
   let hitPlayers: Player[] = [];
 
   for (let hitPlayer of players) {
-    if (collideCircles(getAttackLocation(player), 10, hitPlayer.location, 35 * 2))
+    if (pointCircle(getAttackLocation(player), hitPlayer.location, 35 * 2))
       hitPlayers.push(hitPlayer);
   }
 
@@ -59,7 +59,7 @@ function checkAttack(player: Player, angle: number, players: Player[]) {
 }
 
 function collideGameObjects(gameObject1: GameObject, gameObject2: GameObject) {
-  return collideCircles(gameObject1.location, gameObjectSizes[gameObject1.type] || 0, gameObject2.location, gameObjectSizes[gameObject2.type] || 0);
+  return collideCircles(gameObject1.location, gameObject1.scale, gameObject2.location, gameObject1.scale);
 }
 
 function checkAttackGameObj(player: Player, angle: number, gameObjects: GameObject[]) {
@@ -67,7 +67,7 @@ function checkAttackGameObj(player: Player, angle: number, gameObjects: GameObje
   let hitGameObjects: GameObject[] = [];
 
   for (let gameObject of gameObjects) {
-    if (collideCircles(getAttackLocation(player), 10, gameObject.location, gameObjectSizes[gameObject.type] || 0))
+    if (pointCircle(getAttackLocation(player), gameObject.location, gameObject.scale))
       hitGameObjects.push(gameObject);
   }
 
