@@ -363,7 +363,6 @@ export default class Game {
           );
           let hitGameObjects = Physics.checkAttackGameObj(
             player,
-            player.angle,
             player.getNearbyGameObjects(this.state)
           );
 

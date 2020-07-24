@@ -91,17 +91,5 @@ function getWeaponDamage(item: Weapons) {
   return weapon?.dmg || 0;
 }
 
-function getWeaponId(item: Weapons): number {
-  switch (item) {
-    case Weapons.Axe:
-      return 1;
-
-    // case Items.Bat:
-    //  return 
-  }
-
-  return 0;
-}
-
 export { StartingItems, StartingItems as Age2Items } from "./StartingItems";
 export { PrimaryWeapons, SecondaryWeapons, getHitTime, Weapons, getWeaponAttackDetails, getWeaponDamage };

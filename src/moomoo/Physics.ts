@@ -62,8 +62,7 @@ function collideGameObjects(gameObject1: GameObject, gameObject2: GameObject) {
   return collideCircles(gameObject1.location, gameObject1.scale, gameObject2.location, gameObject1.scale);
 }
 
-function checkAttackGameObj(player: Player, angle: number, gameObjects: GameObject[]) {
-  let weaponDetails = getWeaponAttackDetails(player.weapon);
+function checkAttackGameObj(player: Player, gameObjects: GameObject[]) {
   let hitGameObjects: GameObject[] = [];
 
   for (let gameObject of gameObjects) {
