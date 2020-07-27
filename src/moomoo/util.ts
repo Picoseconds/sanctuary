@@ -21,4 +21,16 @@ function randomPos(width: number, height: number) {
   return new Vec2(Math.random() * (width + 1), Math.random() * (height + 1))
 }
 
-export { SkinColor, eucDistance, randomPos };
+function chunk<T>(arr: T[], len: number) {
+  var chunks = [],
+    i = 0,
+    n = arr.length;
+
+  while (i < n) {
+    chunks.push(arr.slice(i, i += len));
+  }
+
+  return chunks;
+}
+
+export { SkinColor, eucDistance, randomPos, chunk };

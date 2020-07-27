@@ -1,15 +1,31 @@
+/* enum StartingItems {
+  Axe = 1,
+  Sword = 3,
+  Polearm = 5,
+  Bat = 6,
+  Daggers = 7,
+  Stick = 8
+} */
+
+enum StartingItems {
+  Apple = 0,
+  WoodWall = 3,
+  Spikes = 6,
+  Windmill = 10
+}
+
 enum Age3Items {
-  Cookie = 17,
+  Cookie = 1,
   StoneWall = 20
 }
 
 enum Age4Items {
-  PitTrap = 31,
+  PitTrap = 15,
   BoostPad = 32
 }
 
 enum Age5Items {
-  GreaterSpikes = 23,
+  GreaterSpikes = 7,
   FasterWindmill = 27,
   Mine = 29,
   Sapling = 30
@@ -44,3 +60,18 @@ enum Age9Items {
   SpinningSpikes = 25,
   SpawnPad = 36
 }
+
+const ItemType = {
+  ...StartingItems,
+  ...Age3Items,
+  ...Age4Items,
+  ...Age5Items,
+  ...Age6Items,
+  ...Age7Items,
+  ...Age8Items,
+  ...Age9Items
+};
+
+type ItemType = StartingItems | Age3Items | Age4Items | Age5Items | Age6Items | Age7Items | Age8Items | Age9Items;
+
+export { Age3Items, Age4Items, Age5Items, Age6Items, Age7Items, Age8Items, Age9Items, ItemType }

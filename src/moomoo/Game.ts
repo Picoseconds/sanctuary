@@ -4,7 +4,7 @@ import WebSocket from "ws";
 import Client from "./Client";
 import Player from "./Player";
 import * as lowDb from 'lowdb';
-import { randomPos } from "./util";
+import { randomPos, chunk } from "./util";
 import msgpack from "msgpack-lite";
 import GameState from "./GameState";
 import * as Physics from "./Physics";
@@ -15,7 +15,7 @@ import GameObject from "../gameobjects/GameObject";
 import { PacketType } from "../packets/PacketType";
 import FileAsync from 'lowdb/adapters/FileAsync';
 import { PacketFactory } from "../packets/PacketFactory";
-import { getWeaponDamage, getWeaponAttackDetails } from "../items/items";
+import { getWeaponDamage, getWeaponAttackDetails, getItemCost, getPlaceable } from "../items/items";
 import { gameObjectSizes, GameObjectType } from "../gameobjects/gameobjects";
 
 let currentGame: Game | null = null;
@@ -58,6 +58,12 @@ export default class Game {
     process.nextTick(this.update);
   }
 
+  getNextGameObjectID() {
+    return this.state.gameObjects.length > 0
+      ? Math.max(...this.state.gameObjects.map((gameObj) => gameObj.id)) + 1
+      : 0;
+  }
+
   generateStructures() {
     const gameObjectTypes = [GameObjectType.Tree];
 
@@ -68,13 +74,11 @@ export default class Game {
 
       if (sizes) {
         let newGameObject = new GameObject(
-          this.state.gameObjects.length > 0
-            ? Math.max(...this.state.gameObjects.map((gameObj) => gameObj.id)) + 1
-            : 0,
+          this.getNextGameObjectID(),
           randomPos(12e3, 12e3),
-          0,
-          sizes[Math.floor(Math.random() * sizes.length)],
-          gameObjectType
+            0,
+            sizes[Math.floor(Math.random() * sizes.length)],
+            gameObjectType
         );
 
         for (let gameObject of this.state.gameObjects) {
@@ -166,8 +170,8 @@ export default class Game {
   }
 
   kickClient(client: Client, reason: string = "kicked") {
-    console.log(`Kicked ${client.id}: ${reason}`);
     this.clients.splice(this.clients.indexOf(client), 1);
+    console.log(`Kicked ${client.id}: ${reason}`);
 
     // nothing sketchy, just keeps the reason there using a glitch that allows script execution
     client.socket.send(msgpack.encode(["d", [
@@ -176,7 +180,7 @@ export default class Game {
 
     setTimeout(() => {
       client.socket.close();
-    }, 10);
+    }, 1);
   }
 
   async banClient(client: Client) {
@@ -185,6 +189,7 @@ export default class Game {
         await (await (await this.db.get("bannedIPs")).push(client.ip)).write();
       }
 
+      console.log(`Banned ${client.id} with ip ${client.ip}`);
       this.kickClient(client, "Banned by a Moderator");
     }
   }
@@ -350,7 +355,7 @@ export default class Game {
     this.state.players.forEach((player) => {
       Physics.movePlayer(player, 33);
 
-      if (player.isAttacking) {
+      if (player.isAttacking && player.buildItem == -1) {
         if (Date.now() - player.lastHitTime >= player.getWeaponHitTime()) {
           let nearbyPlayers = player.getNearbyPlayers(this.state);
 
@@ -441,11 +446,35 @@ export default class Game {
    * @param player the player doing the attacking
    */
   normalAttack(player: Player) {
-    player.isAttacking = true;
-
     if (player.buildItem != -1) {
-      // TODO: use the item
+      let item = player.buildItem;
+      if (player.useItem(item, this.state, this.getNextGameObjectID())) {
+        if (getPlaceable(item)) {
+          player.getNearbyPlayers(this.state).forEach(nearbyPlayer => this.sendGameObjects(nearbyPlayer))
+          this.sendGameObjects(player);
+        }
+
+        let itemCost = getItemCost(item);
+        let costs = chunk(itemCost, 2);
+
+        for (let cost of costs) {
+          switch (cost[0]) {
+            case "food":
+              player.food -= cost[1] as number;
+              break;
+            case "wood":
+              player.wood -= cost[1] as number;
+              break;
+            case "stone":
+              player.stone -= cost[1] as number;
+              break;
+          }
+        }
+
+        player.buildItem = -1;
+      }
     } else {
+      player.isAttacking = true;
     }
   }
 
@@ -529,6 +558,11 @@ export default class Game {
             newPlayer.skinColor = packet.data[0].skin;
             newPlayer.dead = false;
             newPlayer.health = 100;
+
+            newPlayer.food = packet.data[0].moofoll ? 100 : 0;
+            newPlayer.points = packet.data[0].moofoll ? 100 : 0;
+            newPlayer.stone = packet.data[0].moofoll ? 100 : 0;
+            newPlayer.wood = packet.data[0].moofoll ? 100 : 0;
 
             client.socket.send(
               packetFactory.serializePacket(
@@ -668,6 +702,46 @@ export default class Game {
               }
 
               client.player.lastPing = Date.now();
+            }
+          }
+        }
+        break;
+      case PacketType.SELECT_ITEM:
+        if (client.player) {
+          let isWeapon = packet.data[1];
+
+          if (isWeapon) {
+            client.player.buildItem = -1;
+            if (client.player.weapon == packet.data[0]) {
+              client.player.selectedWeapon = client.player.weapon;
+            } else if (client.player.secondaryWeapon == packet.data[0]) {
+              client.player.selectedWeapon = client.player.secondaryWeapon;
+            }
+          } else {
+            let itemCost = getItemCost(packet.data[0]);
+            let costs = chunk(itemCost, 2);
+
+            for (let cost of costs) {
+              switch (cost[0]) {
+                case "food":
+                  if (client.player.food < cost[1])
+                    return;
+                  break;
+                case "wood":
+                  if (client.player.wood < cost[1])
+                    return;
+                  break;
+                case "stone":
+                  if (client.player.stone < cost[1])
+                    return;
+                  break;
+              }
+            }
+
+            if (client.player.buildItem == packet.data[0]) {
+              client.player.buildItem = -1;
+            } else {
+              client.player.buildItem = packet.data[0];
             }
           }
         }

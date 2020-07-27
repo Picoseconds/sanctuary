@@ -1,4 +1,6 @@
 import weapons from './weapons.json';
+import items from './items.json';
+import { ItemType } from './UpgradeItems';
 
 /**
  * An enum containing the names of all the items. Saves you the effort of differentiating weapon items and other items
@@ -91,5 +93,29 @@ function getWeaponDamage(item: Weapons) {
   return weapon?.dmg || 0;
 }
 
-export { StartingItems, StartingItems as Age2Items } from "./StartingItems";
-export { PrimaryWeapons, SecondaryWeapons, getHitTime, Weapons, getWeaponAttackDetails, getWeaponDamage };
+function getItemCost(item: ItemType) {
+  return items[item].req;
+}
+
+function getPlaceable(item: ItemType) {
+  return !!items[item].group.place;
+}
+
+function getPlaceOffset(item: ItemType) {
+  return items[item].placeOffset;
+}
+
+function getScale(item: ItemType) {
+  return items[item].scale;
+}
+
+function getGameObjID(item: ItemType) {
+  switch (item) {
+    case ItemType.WoodWall:
+      return 3;
+  }
+
+  return 0;
+}
+
+export { PrimaryWeapons, SecondaryWeapons, getHitTime, Weapons, getWeaponAttackDetails, getWeaponDamage, getItemCost, getPlaceable, getPlaceOffset, getScale, getGameObjID };

@@ -13,7 +13,15 @@ import {
   SecondaryWeapons,
   Weapons,
   getHitTime,
+  getPlaceable,
+  getScale,
+  getPlaceOffset,
+  getGameObjID
 } from "../items/items";
+import { ItemType } from "../items/UpgradeItems";
+import Item from "../items/Item";
+import GameObject from "../gameobjects/GameObject";
+import { collideGameObjects } from "./Physics";
 
 export default class Player extends Entity {
   public name: string;
@@ -33,6 +41,7 @@ export default class Player extends Entity {
   public selectedWeapon: Weapons = 0;
   public weaponVariant: WeaponVariant = WeaponVariant.Normal;
   public buildItem: number = -1;
+  public items: ItemType[] = [ItemType.Apple, ItemType.WoodWall, ItemType.Spikes, ItemType.Windmill];
 
   public clanName: string | null = null;
   public isClanLeader: boolean = false;
@@ -170,6 +179,71 @@ export default class Player extends Entity {
 
   public getWeaponHitTime() {
     return getHitTime(this.selectedWeapon);
+  }
+
+  public useItem(item: ItemType, gameState?: GameState, gameObjectID?: number) {
+    let packetFactory = PacketFactory.getInstance();
+
+    if (getPlaceable(item) && gameState && gameObjectID) {
+      let offset = 35 + getScale(item) + (getPlaceOffset(item) || 0);
+      let location = this.location.add(offset * Math.cos(this.angle), offset * Math.sin(this.angle), true);
+
+      let newGameObject = new GameObject(
+        gameObjectID,
+        location,
+        this.angle,
+        getScale(item),
+        undefined,
+        getGameObjID(item),
+        this.id
+      );
+
+      for (let gameObject of gameState.gameObjects) {
+        if (collideGameObjects(gameObject, newGameObject))
+          return false;
+      }
+
+      gameState?.gameObjects.push(newGameObject); 
+
+      return true;
+    }
+
+    let healedAmount: number;
+
+    switch (item) {
+      case ItemType.Cookie:
+        if (this.health >= 100)
+          return false;
+
+        healedAmount = Math.min(100 - this.health, 40);
+
+        this.client?.socket.send(
+          new Packet(
+            PacketType.HEALTH_CHANGE,
+            [this.location.x, this.location.y, -healedAmount, 1]
+          )
+        );
+
+        this.health = Math.min(this.health + 40, 100);
+        return true;
+      case ItemType.Apple:
+        if (this.health >= 100)
+          return false;
+
+        healedAmount = Math.min(100 - this.health, 20);
+
+        this.client?.socket.send(
+          packetFactory.serializePacket(
+            new Packet(
+              PacketType.HEALTH_CHANGE,
+              [this.location.x, this.location.y, -healedAmount, 1]
+            )
+          )
+        );
+
+        this.health = Math.min(this.health + 20, 100);
+        return true;
+    }
   }
 
   public getNearbyGameObjects(state: GameState) {
