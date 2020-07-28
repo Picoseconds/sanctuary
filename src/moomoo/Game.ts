@@ -1,4 +1,3 @@
-import Vec2 from "vec2";
 import lowdb from 'lowdb';
 import WebSocket from "ws";
 import Client from "./Client";
@@ -119,6 +118,8 @@ export default class Game {
         if (index > -1) {
           this.state.players.splice(index, 1);
         }
+
+        this.state.gameObjects.filter(gameObj => gameObj.ownerSID != client.player?.id);
       }
     });
 
@@ -277,7 +278,26 @@ export default class Game {
    * Called every once in a while to send new data
    */
   tick() {
+    let packetFactory = PacketFactory.getInstance();
+
     this.sendPlayerUpdates();
+
+    let leaderboardUpdate: (string | number)[] = [];
+
+    for (let player of this.state.players.slice(0, 10)) {
+      leaderboardUpdate = leaderboardUpdate.concat([player.id, player.name, player.points]);
+    }
+
+    for (let client of this.clients) {
+      client.socket.send(
+        packetFactory.serializePacket(
+          new Packet(
+            PacketType.LEADERBOARD_UPDATE,
+            [leaderboardUpdate]
+          )
+        )
+      );
+    }
   }
 
   /**
@@ -418,6 +438,15 @@ export default class Game {
                 player.wood++;
                 break;
             }
+
+            player.client?.socket.send(
+              packetFactory.serializePacket(
+                new Packet(PacketType.WIGGLE, [
+                  Math.atan2(player.location.y - hitGameObject.location.y, player.location.x - hitGameObject.location.x),
+                  hitGameObject.id,
+                ])
+              )
+            );
           }
 
           this.gatherAnim(player, hitGameObjects.length > 0);
