@@ -4,6 +4,7 @@ import { eucDistance } from "./util";
 import GameObject from '../gameobjects/GameObject';
 import { gameObjectSizes } from "../gameobjects/gameobjects";
 import { getWeaponAttackDetails, Weapons } from "../items/items";
+import GameState from "./GameState";
 
 function collideCircles(pos1: Vec2, r1: number, pos2: Vec2, r2: number) {
   return pos1.distance(pos2) <= r1 + r2;
@@ -13,22 +14,50 @@ function collideRectangles(x1: number, y1: number, w1: number, h1: number, x2: n
   return x1 + w1 >= x2 && x1 <= x2 + w2 && y1 + w1 >= y2 && y1 <= y2 + h2;
 }
 
-function moveTowards(player: Player, angle: number, speed: number, deltaTime: number) {
-  tryMovePlayer(player, deltaTime / 170, Math.cos(angle) * speed * 60, Math.sin(angle) * speed * 60);
-}
-
-function tryMovePlayer(player: Player, delta: number, xVel: number, yVel: number) {
-  // TODO: GameObject collision
-  player.location = new Vec2(
-    player.location.x + delta * xVel,
-    player.location.y + delta * yVel
+function moveTowards(player: Player, angle: number, speed: number, deltaTime: number, state: GameState) {
+  tryMovePlayer(player,
+    deltaTime / 170,
+    Math.cos(angle) * speed * 60, Math.sin(angle) * speed * 60,
+    state
   );
 }
 
-function movePlayer(player: Player, delta: number) {
+/**
+ * Utility function to collide a player and a GameObject with collideCircles()
+ * @param player the player to test collision for
+ * @param gameObj the GameObject to test collision for
+ */
+function collidePlayerGameObject(player: Player, gameObj: GameObject) {
+  return collideCircles(player.location, 35, gameObj.location, gameObj.realScale);
+}
+
+function tryMovePlayer(player: Player, delta: number, xVel: number, yVel: number, state: GameState) {
+  let newLocation = new Vec2(
+    player.location.x,
+    player.location.y
+  );
+
+  for (let gameObj of player.getNearbyGameObjects(state)) {
+    if (collidePlayerGameObject(player, gameObj)) {
+      xVel *= .75;
+      yVel *= .75;
+
+      let angle = Math.atan2(newLocation.y - gameObj.location.y, newLocation.x - gameObj.location.x);
+      newLocation = new Vec2(
+        gameObj.location.x + Math.cos(angle) * (gameObj.realScale + 35),
+        gameObj.location.y + Math.sin(angle) * (gameObj.realScale + 35)
+      );
+    }
+  }
+
+  newLocation.clamp(new Vec2(0 + 35, 0 + 35), new Vec2(12e3 - 35, 12e3 - 35));
+  player.location = newLocation.add(delta * xVel, delta * yVel);
+}
+
+function movePlayer(player: Player, delta: number, state: GameState) {
   if (player.velocity.x || player.velocity.y) {
     let angle = Math.atan2(player.velocity.y, player.velocity.x);
-    tryMovePlayer(player, delta, player.velocity.x, player.velocity.y);
+    tryMovePlayer(player, delta, player.velocity.x, player.velocity.y, state);
     player.velocity = player.velocity.multiply(0.993 ** delta, 0.993 ** delta);
   }
 }
@@ -59,7 +88,7 @@ function checkAttack(player: Player, angle: number, players: Player[]) {
 }
 
 function collideGameObjects(gameObject1: GameObject, gameObject2: GameObject) {
-  return collideCircles(gameObject1.location, gameObject1.scale, gameObject2.location, gameObject1.scale);
+  return collideCircles(gameObject1.location, gameObject1.realScale, gameObject2.location, gameObject1.realScale);
 }
 
 function checkAttackGameObj(player: Player, gameObjects: GameObject[]) {
@@ -68,7 +97,7 @@ function checkAttackGameObj(player: Player, gameObjects: GameObject[]) {
   let range = getWeaponAttackDetails(player.weapon).attackRange;
 
   for (let gameObject of gameObjects) {
-    if (range + gameObject.scale < gameObject.location.distance(player.location)) continue;
+    if (range + gameObject.realScale < gameObject.location.distance(player.location)) continue;
 
     let angle = Math.atan2(gameObject.location.y - player.location.y, gameObject.location.x - player.location.x);
     let angleDist = Math.abs(player.angle - angle) % (2 * Math.PI);

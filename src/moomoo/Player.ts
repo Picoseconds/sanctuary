@@ -194,6 +194,7 @@ export default class Player extends Entity {
         this.angle,
         getScale(item),
         undefined,
+        undefined,
         getGameObjID(item),
         this.id
       );

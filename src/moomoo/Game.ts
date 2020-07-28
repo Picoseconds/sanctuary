@@ -73,12 +73,14 @@ export default class Game {
       let sizes = gameObjectSizes[gameObjectType];
 
       if (sizes) {
+        let size = sizes[Math.floor(Math.random() * sizes.length)];
         let newGameObject = new GameObject(
           this.getNextGameObjectID(),
           randomPos(12e3, 12e3),
-            0,
-            sizes[Math.floor(Math.random() * sizes.length)],
-            gameObjectType
+          0,
+          size,
+          gameObjectType,
+          gameObjectType == GameObjectType.Tree ? size * 0.6 : size
         );
 
         for (let gameObject of this.state.gameObjects) {
@@ -353,7 +355,7 @@ export default class Game {
       }
     });
     this.state.players.forEach((player) => {
-      Physics.movePlayer(player, 33);
+      Physics.movePlayer(player, 33, this.state);
 
       if (player.isAttacking && player.buildItem == -1) {
         if (Date.now() - player.lastHitTime >= player.getWeaponHitTime()) {
@@ -403,6 +405,17 @@ export default class Game {
               );
             }
 
+            switch (hitGameObject.type) {
+              case GameObjectType.Bush:
+                player.food++;
+                break;
+              case GameObjectType.Mine:
+                player.stone++;
+                break;
+              case GameObjectType.Tree:
+                player.wood++;
+                break;
+            }
             player.client?.socket.send(
               packetFactory.serializePacket(
                 new Packet(PacketType.WIGGLE, [player.angle, hitGameObject.id])
@@ -423,7 +436,8 @@ export default class Game {
           player,
           player.moveDirection,
           player.location.y > 2400 ? 1 : 0.8,
-          deltaTime
+          deltaTime,
+          this.state
         );
 
         this.sendGameObjects(player);
@@ -550,7 +564,7 @@ export default class Game {
 
             this.sendGameObjects(newPlayer);
 
-            newPlayer.location = new Vec2(100, 100);
+            newPlayer.location = randomPos(12e3, 12e3);
             newPlayer.name =
               packet.data[0].name > 15 || packet.data[0].name === ""
                 ? "unknown"

@@ -8,6 +8,7 @@ export default class GameObject {
     public angle: number = 0,
     public scale: number = 1,
     public type: GameObjectType = GameObjectType.Tree,
+    public realScale: number = scale,
     public data: any = null,
     public ownerSID: number = -1
   ) {}
