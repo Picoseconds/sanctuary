@@ -39,15 +39,17 @@ export default class Player extends Entity {
   public weapon: PrimaryWeapons = 0;
   public secondaryWeapon: SecondaryWeapons = 0;
   public selectedWeapon: Weapons = 0;
-  public weaponVariant: WeaponVariant = WeaponVariant.Normal;
-  public buildItem: number = -1;
+  public weaponVariant = WeaponVariant.Normal;
+  public buildItem = -1;
   public items: ItemType[] = [ItemType.Apple, ItemType.WoodWall, ItemType.Spikes, ItemType.Windmill];
 
   public clanName: string | null = null;
-  public isClanLeader: boolean = false;
+  public isClanLeader = false;
 
-  public kills: number = 0;
-  public dead: boolean = false;
+  public kills = 0;
+  public dead = false;
+
+  public inTrap = false;
 
   public autoAttackOn: boolean = false;
   public disableRotation: boolean = false;
