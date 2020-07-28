@@ -88,7 +88,7 @@ function checkAttack(player: Player, angle: number, players: Player[]) {
 }
 
 function collideGameObjects(gameObject1: GameObject, gameObject2: GameObject) {
-  return collideCircles(gameObject1.location, gameObject1.realScale, gameObject2.location, gameObject1.realScale);
+  return collideCircles(gameObject1.location, gameObject1.scale, gameObject2.location, gameObject1.scale);
 }
 
 function checkAttackGameObj(player: Player, gameObjects: GameObject[]) {
@@ -97,7 +97,7 @@ function checkAttackGameObj(player: Player, gameObjects: GameObject[]) {
   let range = getWeaponAttackDetails(player.weapon).attackRange;
 
   for (let gameObject of gameObjects) {
-    if (range + gameObject.realScale < gameObject.location.distance(player.location)) continue;
+    if (range + gameObject.scale < gameObject.location.distance(player.location)) continue;
 
     let angle = Math.atan2(gameObject.location.y - player.location.y, gameObject.location.x - player.location.x);
     let angleDist = Math.abs(player.angle - angle) % (2 * Math.PI);
