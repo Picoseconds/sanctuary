@@ -6,11 +6,11 @@ import { gameObjectSizes } from "../gameobjects/gameobjects";
 import { getWeaponAttackDetails, Weapons } from "../items/items";
 
 function collideCircles(pos1: Vec2, r1: number, pos2: Vec2, r2: number) {
-    return pos1.distance(pos2) <= r1 + r2;
+  return pos1.distance(pos2) <= r1 + r2;
 }
 
 function collideRectangles(x1: number, y1: number, w1: number, h1: number, x2: number, y2: number, w2: number, h2: number) {
-    return x1 + w1 >= x2 && x1 <= x2 + w2 && y1 + w1 >= y2 && y1 <= y2 + h2;
+  return x1 + w1 >= x2 && x1 <= x2 + w2 && y1 + w1 >= y2 && y1 <= y2 + h2;
 }
 
 function moveTowards(player: Player, angle: number, speed: number, deltaTime: number) {
@@ -63,11 +63,18 @@ function collideGameObjects(gameObject1: GameObject, gameObject2: GameObject) {
 }
 
 function checkAttackGameObj(player: Player, gameObjects: GameObject[]) {
+  const GATHER_RANGE = Math.PI / 2.6;
   let hitGameObjects: GameObject[] = [];
+  let range = getWeaponAttackDetails(player.weapon).attackRange;
 
   for (let gameObject of gameObjects) {
-    if (pointCircle(getAttackLocation(player), gameObject.location, gameObject.scale))
-      hitGameObjects.push(gameObject);
+    if (range + gameObject.scale < gameObject.location.distance(player.location)) continue;
+
+    let angle = Math.atan2(gameObject.location.y - player.location.y, gameObject.location.x - player.location.x);
+    let angleDist = Math.abs(player.angle - angle) % (2 * Math.PI);
+
+    if (angleDist > Math.PI) angleDist = 2 * Math.PI - angleDist;
+    if (angleDist <= GATHER_RANGE) hitGameObjects.push(gameObject);
   }
 
   return hitGameObjects;
