@@ -1,6 +1,7 @@
 import weapons from './weapons.json';
 import items from './items.json';
 import { ItemType } from './UpgradeItems';
+import { WeaponVariant } from '../moomoo/Weapons';
 
 /**
  * An enum containing the names of all the items. Saves you the effort of differentiating weapon items and other items
@@ -88,9 +89,19 @@ function getWeaponAttackDetails(item: Weapons): AttackDetails {
   return { kbMultiplier: weapon?.knock || 1, attackRange: weapon?.range || 10 };
 }
 
-function getWeaponDamage(item: Weapons) {
+function getWeaponDamage(item: Weapons, weaponVariant: WeaponVariant) {
   let weapon = weapons.find(weapon => weapon.id == item);
-  return weapon?.dmg || 0;
+  let baseDamage = weapon?.dmg || 0;
+
+  switch (weaponVariant) {
+    case WeaponVariant.Normal:
+      return baseDamage;
+    case WeaponVariant.Gold:
+      return baseDamage * 1.1;
+    case WeaponVariant.Diamond:
+    case WeaponVariant.Ruby:
+      return baseDamage * 1.18;
+  }
 }
 
 function getItemCost(item: ItemType) {
