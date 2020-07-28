@@ -374,7 +374,9 @@ export default class Game {
           );
 
           for (let hitPlayer of hitPlayers) {
-            hitPlayer.health -= getWeaponDamage(player.weapon, player.weaponVariant);
+            let dmg = getWeaponDamage(player.weapon, player.weaponVariant);
+
+            hitPlayer.health -= dmg;
             if (hitPlayer.health <= 0 && hitPlayer.client) {
               this.killPlayer(hitPlayer);
             } else {
@@ -388,7 +390,7 @@ export default class Game {
 
             player.client?.socket.send(
               packetFactory.serializePacket(
-                new Packet(PacketType.HEALTH_CHANGE, [hitPlayer.location.x, hitPlayer.location.y, getWeaponDamage(player.weapon), 1])
+                new Packet(PacketType.HEALTH_CHANGE, [hitPlayer.location.x, hitPlayer.location.y, dmg, 1])
               )
             );
           }
