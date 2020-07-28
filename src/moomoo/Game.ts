@@ -400,7 +400,7 @@ export default class Game {
               nearbyPlayer.client?.socket.send(
                 packetFactory.serializePacket(
                   new Packet(PacketType.WIGGLE, [
-                    player.angle,
+                    Math.atan2(player.location.y - hitGameObject.location.y, player.location.x - hitGameObject.location.x),
                     hitGameObject.id,
                   ])
                 )
@@ -418,11 +418,6 @@ export default class Game {
                 player.wood++;
                 break;
             }
-            player.client?.socket.send(
-              packetFactory.serializePacket(
-                new Packet(PacketType.WIGGLE, [player.angle, hitGameObject.id])
-              )
-            );
           }
 
           this.gatherAnim(player, hitGameObjects.length > 0);
