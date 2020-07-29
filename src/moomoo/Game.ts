@@ -196,12 +196,22 @@ export default class Game {
 
   async banClient(client: Client) {
     if (this.db) {
-      if (!(await (await (await this.db.get("bannedIPs")).includes(client.ip)).value())) {
-        await (await (await this.db.get("bannedIPs")).push(client.ip)).write();
+      if (!this.db.get("bannedIPs").includes(client.ip).value()) {
+        await this.db.get("bannedIPs").push(client.ip).write();
       }
 
       console.log(`Banned ${client.id} with ip ${client.ip}`);
       this.kickClient(client, "Banned by a Moderator");
+    }
+  }
+
+  async unbanIP(ip: string) {
+    if (this.db) {
+      if (this.db.get("bannedIPs").includes(ip).value()) {
+        await this.db.get("bannedIPs").remove(ip).write();
+      }
+
+      console.log(`Unbanned player with ip ${ip}`);
     }
   }
 
@@ -292,7 +302,7 @@ export default class Game {
 
     let leaderboardUpdate: (string | number)[] = [];
 
-    for (let player of this.state.players.sort((a, b) => a.points - b.points).slice(0, 10)) {
+    for (let player of this.state.players.sort((a, b) => a.points - b.points).reverse().slice(0, 10)) {
       leaderboardUpdate = leaderboardUpdate.concat([player.id, player.name, player.points]);
     }
 
