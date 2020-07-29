@@ -431,7 +431,7 @@ export default class Game {
               nearbyPlayer.client?.socket.send(
                 packetFactory.serializePacket(
                   new Packet(PacketType.WIGGLE, [
-                    Math.atan2(player.location.y - hitGameObject.location.y, player.location.x - hitGameObject.location.x),
+                    Math.atan2(hitGameObject.location.y - player.location.y, hitGameObject.location.x - player.location.x),
                     hitGameObject.id,
                   ])
                 )
@@ -453,7 +453,7 @@ export default class Game {
             player.client?.socket.send(
               packetFactory.serializePacket(
                 new Packet(PacketType.WIGGLE, [
-                  Math.atan2(player.location.y - hitGameObject.location.y, player.location.x - hitGameObject.location.x),
+                  Math.atan2(hitGameObject.location.y - player.location.y, hitGameObject.location.x - player.location.x),
                   hitGameObject.id,
                 ])
               )
