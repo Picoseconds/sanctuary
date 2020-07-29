@@ -1,7 +1,7 @@
 enum GameObjectType {
   Tree = 0,
   StoneMine,
-  GoldMine,
+  GoldMine = 3,
   Spike,
   GreaterSpike,
   PoisonSpike,
@@ -10,8 +10,8 @@ enum GameObjectType {
   StoneWall,
   CastleWall,
   Sapling,
-  Mine,
-  Bush,
+  Mine = 2,
+  Bush = 1,
   Cactus
 }
 
