@@ -16,6 +16,7 @@ import FileAsync from 'lowdb/adapters/FileAsync';
 import { PacketFactory } from "../packets/PacketFactory";
 import { getWeaponDamage, getWeaponAttackDetails, getItemCost, getPlaceable } from "../items/items";
 import { gameObjectSizes, GameObjectType } from "../gameobjects/gameobjects";
+import { isNull } from 'util';
 
 let currentGame: Game | null = null;
 
@@ -120,6 +121,13 @@ export default class Game {
         }
 
         this.state.gameObjects.filter(gameObj => gameObj.ownerSID != client.player?.id);
+
+        let tribeIndex = this.state.tribes.findIndex(
+          tribe => tribe.ownerSID == client.player?.id
+        );
+
+        if (tribeIndex > -1)
+          this.state.removeTribe(tribeIndex);
       }
     });
 
@@ -394,11 +402,14 @@ export default class Game {
           );
 
           for (let hitPlayer of hitPlayers) {
+            if (hitPlayer.clanName == player.clanName && hitPlayer.clanName != null) continue;
+
             let dmg = getWeaponDamage(player.weapon, player.weaponVariant);
 
             hitPlayer.health -= dmg;
             if (hitPlayer.health <= 0 && hitPlayer.client) {
               this.killPlayer(hitPlayer);
+              player.kills++;
             } else {
               let attackDetails = getWeaponAttackDetails(player.weapon);
               let knockback = attackDetails.kbMultiplier * 0.3;
@@ -706,14 +717,37 @@ export default class Game {
           let tribe = this.state.tribes.find(
             (tribe) => tribe.name === packet.data[0]
           );
+          let ownerClient = this.state.players.find(player => player.id === tribe?.ownerSID)?.client;
 
           if (tribe) {
-            client.player.clanName = tribe.name;
+            ownerClient?.tribeJoinQueue.push(client.player);
+            ownerClient?.socket.send(
+              packetFactory.serializePacket(
+                new Packet(
+                  PacketType.JOIN_REQUEST,
+                  [client.player.id, client.player.name]
+                )
+              )
+            )
+          }
 
-            if (!tribe.membersSIDs.includes(client.player.id))
-              tribe.membersSIDs.push(client.player.id);
+        }
+        break;
+      case PacketType.CLAN_ACC_JOIN:
+        if (client.tribeJoinQueue.length && client.player && packet.data[1]) {
+          let tribe = this.state.tribes.find(
+            (tribe) => tribe.ownerSID === client.player?.id
+          );
+          let player = client.tribeJoinQueue[0];
+
+          if (tribe && player.clanName === null) {
+            player.clanName = tribe.name;
+
+            this.state.joinClan(player, tribe);
           }
         }
+
+        client.tribeJoinQueue.splice(0, 1);
         break;
       case PacketType.AUTO_ATK:
         if (client.player)
@@ -783,6 +817,19 @@ export default class Game {
             } else {
               client.player.buildItem = packet.data[0];
             }
+          }
+        }
+        break;
+      case PacketType.LEAVE_CLAN:
+        if (client.player) {
+          let tribeIndex = this.state.tribes.findIndex(tribe => tribe.membersSIDs.includes(client.player?.id as number));
+          let tribe = this.state.tribes[tribeIndex];
+
+          if (tribe && tribe.ownerSID == client.player.id) {
+            this.state.removeTribe(tribeIndex);
+            client.tribeJoinQueue = [];
+          } else {
+            this.state.leaveClan(client.player, tribeIndex);
           }
         }
         break;

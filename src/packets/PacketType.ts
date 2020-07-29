@@ -46,7 +46,8 @@ enum PacketType {
   DEATH,
   CLAN_NOTIFY_SERVER,
   CLAN_NOTIFY_CLIENT,
-  HEALTH_CHANGE
+  HEALTH_CHANGE,
+  JOIN_REQUEST
 }
 
 export { PacketType };

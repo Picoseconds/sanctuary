@@ -46,7 +46,22 @@ export default class Player extends Entity {
   public clanName: string | null = null;
   public isClanLeader = false;
 
-  public kills = 0;
+  private _kills: number = 0;
+
+  public get kills(): number {
+    return this._kills;
+  }
+
+  public set kills(newKills: number) {
+    let packetFactory = PacketFactory.getInstance();
+    this.client?.socket.send(
+      packetFactory.serializePacket(
+        new Packet(PacketType.UPDATE_STATS, ["kills", newKills, 1])
+      )
+    );
+    this._kills = newKills;
+  }
+
   public dead = false;
 
   public inTrap = false;
@@ -206,7 +221,7 @@ export default class Player extends Entity {
           return false;
       }
 
-      gameState?.gameObjects.push(newGameObject); 
+      gameState?.gameObjects.push(newGameObject);
 
       return true;
     }

@@ -2,6 +2,8 @@ import WebSocket from "ws";
 import Player from "./Player";
 
 export default class Client {
+  public tribeJoinQueue: Player[] = [];
+
   constructor(
     public id: string,
     public socket: WebSocket,
