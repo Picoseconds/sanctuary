@@ -236,7 +236,7 @@ export default class Player extends Entity {
         location,
         this.angle,
         getScale(item),
-        undefined,
+        -1,
         undefined,
         getGameObjID(item),
         this.id
