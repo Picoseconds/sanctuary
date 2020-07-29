@@ -314,8 +314,8 @@ export default class Game {
     let leaderboardUpdate: (string | number)[] = [];
 
     for (let player of stableSort(this.state.players, (a, b) => {
-      if (a.points > b.points) return -1;
-      if (a.points < b.points) return 1;
+      if (a.points < b.points) return -1;
+      if (a.points > b.points) return 1;
       return 0;
     }).reverse().slice(0, 10)) {
       leaderboardUpdate = leaderboardUpdate.concat([player.id, player.name, player.points]);
