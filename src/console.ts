@@ -99,7 +99,12 @@ dispatcher.register(
         );
 
         if (player && player.client) {
-          game.banClient(player.client);
+          game.isModerator(player.client).then(
+            isModerator => {
+              if (!isModerator && game && player && player.client)
+                game.banClient(player.client);
+            }
+          );
         }
       }
 
@@ -168,6 +173,10 @@ dispatcher.register(
                 case "hp":
                 case "hitpoints":
                   player.health = resourceAmount;
+                  break;
+
+                case "kills":
+                  player.kills = resourceAmount;
                   break;
 
                 default:
