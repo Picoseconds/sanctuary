@@ -3,7 +3,7 @@ import WebSocket from "ws";
 import Client from "./Client";
 import Player from "./Player";
 import * as lowDb from 'lowdb';
-import { randomPos, chunk } from "./util";
+import { randomPos, chunk, stableSort } from "./util";
 import msgpack from "msgpack-lite";
 import GameState from "./GameState";
 import * as Physics from "./Physics";
@@ -313,7 +313,11 @@ export default class Game {
 
     let leaderboardUpdate: (string | number)[] = [];
 
-    for (let player of this.state.players.sort((a, b) => a.points - b.points).reverse().slice(0, 10)) {
+    for (let player of stableSort(this.state.players, (a, b) => {
+      if (a.points > b.points) return -1;
+      if (a.points < b.points) return 1;
+      return 0;
+    }).reverse().slice(0, 10)) {
       leaderboardUpdate = leaderboardUpdate.concat([player.id, player.name, player.points]);
     }
 
