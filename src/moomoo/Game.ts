@@ -462,12 +462,15 @@ export default class Game {
             switch (hitGameObject.type) {
               case GameObjectType.Bush:
                 player.food++;
+                player.xp += 4;
                 break;
               case GameObjectType.Mine:
                 player.stone++;
+                player.xp += 4;
                 break;
               case GameObjectType.Tree:
                 player.wood++;
+                player.xp += 4;
                 break;
               case GameObjectType.GoldMine:
                 player.points += 5;

@@ -62,6 +62,32 @@ export default class Player extends Entity {
     this._kills = newKills;
   }
 
+  public maxXP = 300;
+  public age = 1;
+
+  private _xp: number = 0;
+
+  public get xp(): number {
+    return this._xp;
+  }
+
+  public set xp(newXP: number) {
+    let packetFactory = PacketFactory.getInstance();
+
+    if (newXP >= this.maxXP) {
+      this.age++;
+      this.maxXP *= 1.2;
+      newXP = 0;
+    }
+
+    this.client?.socket.send(
+      packetFactory.serializePacket(
+        new Packet(PacketType.UPDATE_AGE, [newXP, this.maxXP, this.age])
+      )
+    );
+    this._xp = newXP;
+  }
+
   public dead = false;
 
   public inTrap = false;
