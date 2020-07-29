@@ -50,7 +50,7 @@ function tryMovePlayer(player: Player, delta: number, xVel: number, yVel: number
     }
   }
 
-  newLocation.clamp(new Vec2(0 + 35, 0 + 35), new Vec2(12e3 - 35, 12e3 - 35));
+  newLocation.clamp(new Vec2(0 + 35, 0 + 35), new Vec2(14400 - 35, 14400 - 35));
   player.location = newLocation.add(delta * xVel, delta * yVel);
 }
 

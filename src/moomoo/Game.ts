@@ -76,7 +76,7 @@ export default class Game {
         let size = sizes[Math.floor(Math.random() * sizes.length)];
         let newGameObject = new GameObject(
           this.getNextGameObjectID(),
-          randomPos(12e3, 12e3),
+          randomPos(14400, 14400),
           0,
           size,
           gameObjectType,
@@ -630,7 +630,7 @@ export default class Game {
               newPlayer = player;
             }
 
-            newPlayer.location = randomPos(12e3, 12e3);
+            newPlayer.location = randomPos(14400, 14400);
             newPlayer.name =
               packet.data[0].name > 15 || packet.data[0].name === ""
                 ? "unknown"
