@@ -42,7 +42,7 @@ export default class GameState {
       if (client) {
         client.socket.send(
           packetFactory.serializePacket(
-            new Packet(PacketType.SET_CLAN_PLAYERS, data)
+            new Packet(PacketType.SET_CLAN_PLAYERS, [data])
           )
         );
         console.log(data);
