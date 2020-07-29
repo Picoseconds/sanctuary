@@ -292,7 +292,7 @@ export default class Game {
 
     let leaderboardUpdate: (string | number)[] = [];
 
-    for (let player of this.state.players.sort((a, b) => b.points - a.points).slice(0, 10)) {
+    for (let player of this.state.players.sort((a, b) => a.points - b.points).slice(0, 10)) {
       leaderboardUpdate = leaderboardUpdate.concat([player.id, player.name, player.points]);
     }
 
