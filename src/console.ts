@@ -1,5 +1,4 @@
 import ansiEscapes from "ansi-escapes";
-import readline from "readline";
 import chalk from "chalk";
 import { getGame } from "./moomoo/Game";
 import { PacketFactory } from "./packets/PacketFactory";
@@ -70,7 +69,6 @@ dispatcher.register(
 dispatcher.register(
   literal("kill").then(
     argument("playerSID", integer()).executes((context) => {
-      let packetFactory = PacketFactory.getInstance();
       let playerSID = context.getArgument("playerSID", Number);
       let game = getGame();
 
@@ -92,7 +90,6 @@ dispatcher.register(
 dispatcher.register(
   literal("ban").then(
     argument("playerSID", integer()).executes((context) => {
-      let packetFactory = PacketFactory.getInstance();
       let playerSID = context.getArgument("playerSID", Number);
       let game = getGame();
 
@@ -103,6 +100,27 @@ dispatcher.register(
 
         if (player && player.client) {
           game.banClient(player.client);
+        }
+      }
+
+      return 0;
+    })
+  )
+);
+
+dispatcher.register(
+  literal("promote").then(
+    argument("playerSID", integer()).executes((context) => {
+      let playerSID = context.getArgument("playerSID", Number);
+      let game = getGame();
+
+      if (game) {
+        let player = game.state.players.find(
+          (player) => player.id == playerSID
+        );
+
+        if (player && player.client) {
+          game.addModerator(player.client);
         }
       }
 
@@ -209,9 +227,6 @@ function log(text: any) {
   logMethod("> " + coloredCommand);
 }
 
-function warn(text: string) {
-  log(chalk.yellowBright(text));
-}
 
 function error(text: string) {
   process.stderr.write(ansiEscapes.eraseLines(lastMessage.split("\n").length));

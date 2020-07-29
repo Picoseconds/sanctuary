@@ -215,6 +215,17 @@ export default class Game {
     }
   }
 
+  async addModerator(client: Client) {
+    if (this.db) {
+      if (!this.db.get("moderatorIPs").includes(client.ip).value()) {
+        await this.db.get("moderatorIPs").push(client.ip).write();
+      }
+
+      console.log(`Promoted ${client.id} with ip ${client.ip} to Moderator`);
+      this.kickClient(client, "Refresh to be moderator!");
+    }
+  }
+
   killPlayer(player: Player) {
     let packetFactory = PacketFactory.getInstance();
 
