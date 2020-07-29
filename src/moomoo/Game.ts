@@ -292,7 +292,7 @@ export default class Game {
 
     let leaderboardUpdate: (string | number)[] = [];
 
-    for (let player of this.state.players.slice(0, 10)) {
+    for (let player of this.state.players.sort((a, b) => a.points - b.points).slice(0, 10)) {
       leaderboardUpdate = leaderboardUpdate.concat([player.id, player.name, player.points]);
     }
 
@@ -602,8 +602,6 @@ export default class Game {
               newPlayer = player;
             }
 
-            this.sendGameObjects(newPlayer);
-
             newPlayer.location = randomPos(12e3, 12e3);
             newPlayer.name =
               packet.data[0].name > 15 || packet.data[0].name === ""
@@ -631,8 +629,8 @@ export default class Game {
                     client.id,
                     newPlayer.id,
                     (this.isModerator(client) ? `\u3010${newPlayer.id}\u3011 ` : '') + newPlayer.name,
-                    100,
-                    100,
+                    newPlayer.location.x,
+                    newPlayer.location.y,
                     0,
                     100,
                     100,
@@ -645,6 +643,7 @@ export default class Game {
             );
 
             this.sendPlayerUpdates();
+            this.sendGameObjects(newPlayer);
 
             for (let client of this.clients) {
               let seenIndex = client.seenPlayers.indexOf(newPlayer.id);
@@ -685,7 +684,10 @@ export default class Game {
         }
 
         if (packet.data[0].startsWith("/")) {
-          this.isModerator(client).then(isModerator => isModerator && console.runCommand(packet.data[0].substring(1)));
+          this.isModerator(client).then(isModerator => {
+            if (isModerator)
+              console.runCommand(packet.data[0].substring(1))
+          });
         } else {
           let chatPacket = packetFactory.serializePacket(
             new Packet(PacketType.CHAT, [client.player?.id, packet.data[0]])
