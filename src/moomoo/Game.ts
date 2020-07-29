@@ -65,7 +65,7 @@ export default class Game {
   }
 
   generateStructures() {
-    const gameObjectTypes = [GameObjectType.Tree];
+    const gameObjectTypes = [GameObjectType.Tree, GameObjectType.Bush, GameObjectType.Mine, GameObjectType.GoldMine];
 
     outerLoop: for (let i = 0; i < 200; i++) {
       let gameObjectType =
@@ -80,7 +80,7 @@ export default class Game {
           0,
           size,
           gameObjectType,
-          gameObjectType == GameObjectType.Tree ? size * 0.6 : size
+          gameObjectType == GameObjectType.Tree || gameObjectType == GameObjectType.Bush ? size * 0.6 : size
         );
 
         for (let gameObject of this.state.gameObjects) {
@@ -447,6 +447,9 @@ export default class Game {
                 break;
               case GameObjectType.Tree:
                 player.wood++;
+                break;
+              case GameObjectType.GoldMine:
+                player.points += 5;
                 break;
             }
 
