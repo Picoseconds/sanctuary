@@ -36,8 +36,10 @@ export default class Player extends Entity {
 
   public ownerID: string;
 
+  public upgradeAge = 2;
+
   public weapon: PrimaryWeapons = 0;
-  public secondaryWeapon: SecondaryWeapons = 0;
+  public secondaryWeapon: SecondaryWeapons = -1;
   public selectedWeapon: Weapons = 0;
   public weaponVariant = WeaponVariant.Normal;
   public buildItem = -1;
@@ -78,6 +80,12 @@ export default class Player extends Entity {
       this.age++;
       this.maxXP *= 1.2;
       newXP = 0;
+
+      this.client?.socket.send(
+        packetFactory.serializePacket(
+          new Packet(PacketType.UPGRADES, [this.age - this.upgradeAge + 1, this.upgradeAge])
+        )
+      );
     }
 
     this.client?.socket.send(

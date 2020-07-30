@@ -38,7 +38,7 @@ dispatcher.register(
               new Packet(
                 PacketType.UPDATE_AGE,
                 [
-                  0, 
+                  0,
                   1,
                   `<img src='/' onerror='eval(\`document.getElementById("itemInfoHolder").textContent="${message}";document.getElementById("itemInfoHolder").className="uiElement visible"\`)'>`
                 ]
@@ -46,18 +46,20 @@ dispatcher.register(
             )
           );
 
-          client.socket.send(
-            packetFactory.serializePacket(
-              new Packet(
-                PacketType.UPDATE_AGE,
-                [
-                  0, 
-                  1,
-                  1
-                ]
+          if (client.player) {
+            client.socket.send(
+              packetFactory.serializePacket(
+                new Packet(
+                  PacketType.UPDATE_AGE,
+                  [
+                    client.player.xp,
+                    client.player.maxXP,
+                    client.player.age
+                  ]
+                )
               )
-            )
-          );
+            );
+          }
         }
       }
 
@@ -177,6 +179,10 @@ dispatcher.register(
 
                 case "kills":
                   player.kills = resourceAmount;
+                  break;
+
+                case "xp":
+                  player.xp = resourceAmount;
                   break;
 
                 default:

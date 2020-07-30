@@ -14,9 +14,9 @@ import GameObject from "../gameobjects/GameObject";
 import { PacketType } from "../packets/PacketType";
 import FileAsync from 'lowdb/adapters/FileAsync';
 import { PacketFactory } from "../packets/PacketFactory";
-import { getWeaponDamage, getWeaponAttackDetails, getItemCost, getPlaceable } from "../items/items";
+import { getWeaponDamage, getWeaponAttackDetails, getItemCost, getPlaceable, PrimaryWeapons, getWeaponGatherAmount, getPrerequisiteItem, getGroupID } from "../items/items";
 import { gameObjectSizes, GameObjectType } from "../gameobjects/gameobjects";
-import { isNull } from 'util';
+import { getUpgrades, getWeaponUpgrades } from './Upgrades';
 
 let currentGame: Game | null = null;
 
@@ -414,8 +414,6 @@ export default class Game {
         if (Date.now() - player.lastHitTime >= player.getWeaponHitTime()) {
           let nearbyPlayers = player.getNearbyPlayers(this.state);
 
-          player.lastHitTime = Date.now();
-
           let hitPlayers = Physics.checkAttack(
             player,
             player.angle,
@@ -463,21 +461,23 @@ export default class Game {
               );
             }
 
+            let gather = getWeaponGatherAmount(player.weapon);
+
             switch (hitGameObject.type) {
               case GameObjectType.Bush:
-                player.food++;
-                player.xp += 4;
+                player.food += gather;
+                player.xp += 4 * gather;
                 break;
               case GameObjectType.Mine:
-                player.stone++;
-                player.xp += 4;
+                player.stone += gather;
+                player.xp += 4 * gather;
                 break;
               case GameObjectType.Tree:
-                player.wood++;
-                player.xp += 4;
+                player.wood += gather;
+                player.xp += 4 * gather;
                 break;
               case GameObjectType.GoldMine:
-                player.points += 5;
+                player.points += gather == 1 ? 5 : gather;
                 break;
             }
 
@@ -492,6 +492,7 @@ export default class Game {
           }
 
           this.gatherAnim(player, hitGameObjects.length > 0);
+          player.lastHitTime = Date.now();
         }
       }
     });
@@ -819,6 +820,7 @@ export default class Game {
 
           if (isWeapon) {
             client.player.buildItem = -1;
+
             if (client.player.weapon == packet.data[0]) {
               client.player.selectedWeapon = client.player.weapon;
             } else if (client.player.secondaryWeapon == packet.data[0]) {
@@ -863,6 +865,82 @@ export default class Game {
             client.tribeJoinQueue = [];
           } else {
             this.state.leaveClan(client.player, tribeIndex);
+          }
+        }
+        break;
+      case PacketType.SELECT_UPGRADE:
+        if (client.player) {
+          let item = packet.data[0] as number;
+          let upgrades = getUpgrades(client.player.upgradeAge);
+          let weaponUpgrades = getWeaponUpgrades(client.player.upgradeAge);
+
+          if (item <= 15) {
+            if (weaponUpgrades.includes(item)) {
+              if (Object.values(PrimaryWeapons).includes(item)) {
+                if (client.player.selectedWeapon == client.player.weapon)
+                  client.player.selectedWeapon = item;
+                client.player.weapon = item;
+              } else {
+                if (client.player.selectedWeapon == client.player.secondaryWeapon)
+                  client.player.selectedWeapon = item;
+                client.player.secondaryWeapon = item;
+              }
+            } else {
+              this.kickClient(client, "Kicked for hacks");
+            }
+          } else {
+            item -= 16;
+            if (upgrades.includes(item)) {
+              let preItem = getPrerequisiteItem(item);
+
+              if (preItem) {
+                if (!client.player.items.includes(preItem)) this.kickClient(client, "Kicked for hacks");
+              }
+
+              client.player.items[getGroupID(item)] = item;
+              client.player.items = client.player.items.filter(playerItem => playerItem != undefined);
+            } else {
+              this.kickClient(client, "Kicked for hacks");
+            }
+          }
+
+          client.player.upgradeAge++;
+
+          client.socket.send(
+            packetFactory.serializePacket(
+              new Packet(
+                PacketType.UPDATE_ITEMS,
+                [client.player.items, 0]
+              )
+            )
+          );
+
+          let newWeapons = [client.player.weapon];
+
+          if (client.player.secondaryWeapon != -1)
+            newWeapons.push(client.player.secondaryWeapon);
+
+          client.socket.send(
+            packetFactory.serializePacket(
+              new Packet(
+                PacketType.UPDATE_ITEMS,
+                [newWeapons, 1]
+              )
+            )
+          );
+
+          if (client.player.age - client.player.upgradeAge + 1) {
+            client.socket.send(
+              packetFactory.serializePacket(
+                new Packet(PacketType.UPGRADES, [client.player.age - client.player.upgradeAge + 1, client.player.upgradeAge])
+              )
+            );
+          } else {
+            client.socket.send(
+              packetFactory.serializePacket(
+                new Packet(PacketType.UPGRADES, [0, 0])
+              )
+            );
           }
         }
         break;

@@ -45,7 +45,6 @@ export default class GameState {
             new Packet(PacketType.SET_CLAN_PLAYERS, [data])
           )
         );
-        console.log(data);
       }
     }
   }

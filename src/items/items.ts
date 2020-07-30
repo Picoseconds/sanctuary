@@ -3,9 +3,6 @@ import items from './items.json';
 import { ItemType } from './UpgradeItems';
 import { WeaponVariant } from '../moomoo/Weapons';
 
-/**
- * An enum containing the names of all the items. Saves you the effort of differentiating weapon items and other items
- */
 enum PrimaryWeapons {
   ToolHammer = 0,
   Axe = 1,
@@ -13,17 +10,19 @@ enum PrimaryWeapons {
   Polearm = 5,
   Bat = 6,
   Daggers = 7,
-  Stick = 8
+  Stick = 8,
+  Katana = 4,
+  GreatAxe = 2
 }
 
 enum SecondaryWeapons {
-  GreatHammer = 9,
+  GreatHammer = 10,
   Shield,
-  Crossbow,
-  RepeaterCrossbow,
-  McGrabby,
-  Musket,
-  Bow
+  Crossbow = 12,
+  RepeaterCrossbow = 13,
+  McGrabby = 14,
+  Musket = 15,
+  Bow = 9
 }
 
 interface AttackDetails {
@@ -81,6 +80,12 @@ function getHitTime(weapon: Weapons) {
 
     case Weapons.Sword:
       return 450;
+
+    case Weapons.GreatAxe:
+      return 400;
+
+    case Weapons.Katana:
+      return 300;
   }
 }
 
@@ -104,12 +109,25 @@ function getWeaponDamage(item: Weapons, weaponVariant: WeaponVariant) {
   }
 }
 
+function getWeaponGatherAmount(item: Weapons) {
+  let weapon = weapons.find(weapon => weapon.id == item);
+  return weapon?.gather || 0;
+}
+
 function getItemCost(item: ItemType) {
   return items[item].req;
 }
 
 function getPlaceable(item: ItemType) {
   return !!items[item].group.place;
+}
+
+function getGroupID(item: ItemType) {
+  return items[item].group.id;
+}
+
+function getPrerequisiteItem(item: ItemType) {
+  return items[item].pre;
 }
 
 function getPlaceOffset(item: ItemType) {
@@ -129,4 +147,4 @@ function getGameObjID(item: ItemType) {
   return 0;
 }
 
-export { PrimaryWeapons, SecondaryWeapons, getHitTime, Weapons, getWeaponAttackDetails, getWeaponDamage, getItemCost, getPlaceable, getPlaceOffset, getScale, getGameObjID };
+export { PrimaryWeapons, SecondaryWeapons, getHitTime, Weapons, getWeaponAttackDetails, getWeaponDamage, getItemCost, getPlaceable, getPlaceOffset, getScale, getGameObjID, getWeaponGatherAmount, getPrerequisiteItem, getGroupID };
