@@ -447,6 +447,13 @@ export default class Game {
               );
             }
 
+            switch (player.selectedWeapon) {
+              case Weapons.McGrabby:
+                player.points += Math.min(250, hitPlayer.points);
+                hitPlayer.points -= Math.min(250, hitPlayer.points);
+                break;
+            }
+
             player.client?.socket.send(
               packetFactory.serializePacket(
                 new Packet(PacketType.HEALTH_CHANGE, [hitPlayer.location.x, hitPlayer.location.y, dmg, 1])
