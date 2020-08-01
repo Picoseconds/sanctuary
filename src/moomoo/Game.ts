@@ -14,7 +14,7 @@ import GameObject from "../gameobjects/GameObject";
 import { PacketType } from "../packets/PacketType";
 import FileAsync from 'lowdb/adapters/FileAsync';
 import { PacketFactory } from "../packets/PacketFactory";
-import { getWeaponDamage, getWeaponAttackDetails, getItemCost, getPlaceable, PrimaryWeapons, getWeaponGatherAmount, getPrerequisiteItem, getGroupID } from "../items/items";
+import { getWeaponDamage, getWeaponAttackDetails, getItemCost, getPlaceable, PrimaryWeapons, getWeaponGatherAmount, getPrerequisiteItem, getGroupID, Weapons } from "../items/items";
 import { gameObjectSizes, GameObjectType } from "../gameobjects/gameobjects";
 import { getUpgrades, getWeaponUpgrades } from './Upgrades';
 
@@ -410,7 +410,7 @@ export default class Game {
     this.state.players.forEach((player) => {
       Physics.movePlayer(player, 33, this.state);
 
-      if (player.isAttacking && player.buildItem == -1) {
+      if (player.isAttacking && player.selectedWeapon != Weapons.Shield && player.buildItem == -1) {
         if (Date.now() - player.lastHitTime >= player.getWeaponHitTime()) {
           let nearbyPlayers = player.getNearbyPlayers(this.state);
 
