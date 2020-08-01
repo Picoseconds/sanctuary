@@ -19,9 +19,9 @@ import {
   getGameObjID
 } from "../items/items";
 import { ItemType } from "../items/UpgradeItems";
-import Item from "../items/Item";
 import GameObject from "../gameobjects/GameObject";
 import { collideGameObjects } from "./Physics";
+import { getHat } from "./Hats";
 
 export default class Player extends Entity {
   public name: string;
@@ -30,13 +30,22 @@ export default class Player extends Entity {
   public game: Game;
 
   public lastPing: number = 0;
+  public lastDot = 0;
 
-  public hatID: number;
-  public accID: number;
+  public hatID: number = 0;
+  public accID: number = 0;
 
   public ownerID: string;
 
   public upgradeAge = 2;
+
+  public foodHealOverTime = 0;
+  public foodHealOverTimeAmt = 0;
+  public maxFoodHealOverTime = -1;
+
+  public bleedDmg = 5;
+  public bleedAmt = 0;
+  public maxBleedAmt = -1;
 
   public weapon: PrimaryWeapons = 0;
   public secondaryWeapon: SecondaryWeapons = -1;
@@ -63,6 +72,28 @@ export default class Player extends Entity {
       )
     );
     this._kills = newKills;
+  }
+
+  public damageOverTime() {
+    let hat = getHat(this.hatID);
+
+    if (hat) {
+      this.health += hat.healthRegen || 0;
+
+      if (this.foodHealOverTimeAmt < this.maxFoodHealOverTime) {
+        this.health += this.foodHealOverTime;
+        this.foodHealOverTimeAmt++;
+      } else {
+        this.foodHealOverTime = -1;
+      }
+
+      if (this.bleedAmt < this.maxBleedAmt) {
+        this.health += this.bleedDmg;
+        this.bleedAmt++;
+      } else {
+        this.maxBleedAmt = -1;
+      }
+    }
   }
 
   public maxXP = 300;
@@ -201,6 +232,10 @@ export default class Player extends Entity {
     }
 
     this._health = newHealth;
+
+    if (this._health <= 0 && !this.dead) {
+      this.die();
+    }
   }
 
   constructor(
@@ -333,6 +368,7 @@ export default class Player extends Entity {
     this.autoAttackOn = false;
     this.disableRotation = false;
     this.moveDirection = null;
+    this.items = [ItemType.Apple, ItemType.WoodWall, ItemType.Spikes, ItemType.Windmill];
 
     this.client?.socket.send(
       packetFactory.serializePacket(

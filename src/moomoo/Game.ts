@@ -14,9 +14,11 @@ import GameObject from "../gameobjects/GameObject";
 import { PacketType } from "../packets/PacketType";
 import FileAsync from 'lowdb/adapters/FileAsync';
 import { PacketFactory } from "../packets/PacketFactory";
-import { getWeaponDamage, getWeaponAttackDetails, getItemCost, getPlaceable, PrimaryWeapons, getWeaponGatherAmount, getPrerequisiteItem, getGroupID, Weapons, getPrerequisiteWeapon } from "../items/items";
+import { getWeaponDamage, getWeaponAttackDetails, getItemCost, getPlaceable, PrimaryWeapons, getWeaponGatherAmount, getPrerequisiteItem, getGroupID, Weapons, getPrerequisiteWeapon, getPlaceOffset } from "../items/items";
 import { gameObjectSizes, GameObjectType } from "../gameobjects/gameobjects";
 import { getUpgrades, getWeaponUpgrades } from './Upgrades';
+import { getHat } from './Hats';
+import { WeaponVariant } from './Weapons';
 
 let currentGame: Game | null = null;
 
@@ -410,6 +412,11 @@ export default class Game {
     this.state.players.forEach((player) => {
       Physics.movePlayer(player, 33, this.state);
 
+      if (Date.now() - player.lastDot >= 1000) {
+        player.damageOverTime();
+        player.lastDot = Date.now();
+      }
+
       if (player.isAttacking && player.selectedWeapon != Weapons.Shield && player.buildItem == -1) {
         if (Date.now() - player.lastHitTime >= player.getWeaponHitTime()) {
           let nearbyPlayers = player.getNearbyPlayers(this.state);
@@ -424,17 +431,47 @@ export default class Game {
             player.getNearbyGameObjects(this.state)
           );
 
+          let weaponVariant = player.selectedWeapon == player.weapon ?
+            player.primaryWeaponVariant :
+            player.secondaryWeaponVariant;
           for (let hitPlayer of hitPlayers) {
             if (hitPlayer.clanName == player.clanName && hitPlayer.clanName != null) continue;
 
             let dmg = getWeaponDamage(
               player.selectedWeapon,
-              player.selectedWeapon == player.weapon ?
-                player.primaryWeaponVariant :
-                player.secondaryWeaponVariant
+              weaponVariant
             );
 
+            let hat = getHat(player.hatID);
+            let hitPlayerHat = getHat(hitPlayer.hatID);
+
+            if (hat && hat.dmgMultO)
+              dmg *= hat.dmgMultO;
+
+            if (hitPlayerHat) {
+              dmg *= hitPlayerHat.dmgMult || 1;
+
+              if (hitPlayerHat.dmg) {
+                player.health -= hitPlayerHat.dmg * dmg;
+              }
+
+              if (hitPlayerHat.dmgK) {
+                let knockback = hitPlayerHat.dmgK;
+                hitPlayer.velocity.add(
+                  knockback * Math.cos(player.angle),
+                  knockback * Math.sin(player.angle)
+                );
+              }
+            }
+
             hitPlayer.health -= dmg;
+
+            if (weaponVariant === WeaponVariant.Ruby) {
+              hitPlayer.bleedDmg = 5;
+              hitPlayer.bleedAmt = 0;
+              hitPlayer.maxBleedAmt = 5;
+            }
+
             if (hitPlayer.health <= 0 && hitPlayer.client) {
               this.killPlayer(hitPlayer);
               player.kills++;
@@ -456,7 +493,7 @@ export default class Game {
 
             player.client?.socket.send(
               packetFactory.serializePacket(
-                new Packet(PacketType.HEALTH_CHANGE, [hitPlayer.location.x, hitPlayer.location.y, dmg, 1])
+                new Packet(PacketType.HEALTH_CHANGE, [hitPlayer.location.x, hitPlayer.location.y, Math.round(dmg), 1])
               )
             );
           }
@@ -513,10 +550,16 @@ export default class Game {
 
     for (let player of this.state.players) {
       if (player.moveDirection !== null) {
+        let speedMult = player.location.y > 2400 ? 1 : 0.8;
+
+        if (player.hatID !== -1) {
+          speedMult *= getHat(player.hatID)?.spdMult || 1;
+        }
+
         Physics.moveTowards(
           player,
           player.moveDirection,
-          player.location.y > 2400 ? 1 : 0.8,
+          speedMult,
           deltaTime,
           this.state
         );
@@ -696,9 +739,6 @@ export default class Game {
           this.kickClient(client, "Malformed spawn packet!");
         }
         break;
-      case PacketType.BUY_AND_EQUIP:
-        if (packet.data[0] === 1) if (client.player) break;
-        break;
       case PacketType.ATTACK:
         if (client.player) {
           if (packet.data[0]) {
@@ -877,6 +917,62 @@ export default class Game {
             client.tribeJoinQueue = [];
           } else {
             this.state.leaveClan(client.player, tribeIndex);
+          }
+        }
+        break;
+      case PacketType.BUY_AND_EQUIP:
+        let isAcc = packet.data[2];
+
+        if ((!getHat(packet.data[1]) || getHat(packet.data[1])?.dontSell) && packet.data[1] !== 0) {
+          this.kickClient(client, "Kicked for hacks");
+          return;
+        }
+
+        if (client.player) {
+          if (packet.data[0]) {
+            if (client.ownedHats.includes(packet.data[1])) {
+              this.kickClient(client, "Kicked for hacks");
+            } else {
+              if (client.player.points >= (getHat(packet.data[1])?.price || 0)) {
+                client.ownedHats.push(packet.data[1]);
+                client.socket.send(
+                  packetFactory.serializePacket(
+                    new Packet(
+                      PacketType.UPDATE_STORE,
+                      [0, packet.data[1], isAcc]
+                    )
+                  )
+                );
+              }
+            }
+          } else {
+            if (client.ownedHats.includes(packet.data[1]) || getHat(packet.data[1])?.price === 0 || packet.data[1] === 0) {
+              if (client.player.hatID === packet.data[1]) {
+                client.player.hatID = 0;
+
+                client.socket.send(
+                  packetFactory.serializePacket(
+                    new Packet(
+                      PacketType.UPDATE_STORE,
+                      [1, 0, isAcc]
+                    )
+                  )
+                );
+              } else {
+                client.player.hatID = packet.data[1];
+
+                client.socket.send(
+                  packetFactory.serializePacket(
+                    new Packet(
+                      PacketType.UPDATE_STORE,
+                      [1, packet.data[1], isAcc]
+                    )
+                  )
+                );
+              }
+            } else {
+              this.kickClient(client, "Kicked for hacks");
+            }
           }
         }
         break;
