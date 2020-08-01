@@ -876,6 +876,12 @@ export default class Game {
 
           if (item <= 15) {
             if (weaponUpgrades.includes(item)) {
+              let preItem = getPrerequisiteItem(item);
+
+              if (preItem) {
+                if (!(client.player.weapon == item - preItem || client.player.secondaryWeapon == item - preItem)) this.kickClient(client, "Kicked for hacks");
+              }
+
               if (Object.values(PrimaryWeapons).includes(item)) {
                 if (client.player.selectedWeapon == client.player.weapon)
                   client.player.selectedWeapon = item;
@@ -894,7 +900,7 @@ export default class Game {
               let preItem = getPrerequisiteItem(item);
 
               if (preItem) {
-                if (!client.player.items.includes(preItem)) this.kickClient(client, "Kicked for hacks");
+                if (!client.player.items.includes(item - preItem)) this.kickClient(client, "Kicked for hacks");
               }
 
               client.player.items[getGroupID(item)] = item;
