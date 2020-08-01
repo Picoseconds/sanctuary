@@ -75,24 +75,34 @@ export default class Player extends Entity {
   }
 
   public damageOverTime() {
+    let packetFactory = PacketFactory.getInstance();
     let hat = getHat(this.hatID);
 
     if (hat) {
       this.health += hat.healthRegen || 0;
+    }
 
-      if (this.foodHealOverTimeAmt < this.maxFoodHealOverTime) {
-        this.health += this.foodHealOverTime;
-        this.foodHealOverTimeAmt++;
-      } else {
-        this.foodHealOverTime = -1;
-      }
+    if (this.foodHealOverTimeAmt < this.maxFoodHealOverTime) {
+      this.client?.socket.send(
+        packetFactory.serializePacket(
+          new Packet(
+            PacketType.HEALTH_CHANGE,
+            [this.location.x, this.location.y, -Math.min(100 - this.health, this.foodHealOverTime), 1]
+          )
+        )
+      );
+      this.health = Math.min(this.health + this.foodHealOverTime, 100);
 
-      if (this.bleedAmt < this.maxBleedAmt) {
-        this.health += this.bleedDmg;
-        this.bleedAmt++;
-      } else {
-        this.maxBleedAmt = -1;
-      }
+      this.foodHealOverTimeAmt++;
+    } else {
+      this.foodHealOverTime = -1;
+    }
+
+    if (this.bleedAmt < this.maxBleedAmt) {
+      this.health -= this.bleedDmg;
+      this.bleedAmt++;
+    } else {
+      this.maxBleedAmt = -1;
     }
   }
 
@@ -306,14 +316,39 @@ export default class Player extends Entity {
         healedAmount = Math.min(100 - this.health, 40);
 
         this.client?.socket.send(
-          new Packet(
-            PacketType.HEALTH_CHANGE,
-            [this.location.x, this.location.y, -healedAmount, 1]
+          packetFactory.serializePacket(
+            new Packet(
+              PacketType.HEALTH_CHANGE,
+              [this.location.x, this.location.y, -healedAmount, 1]
+            )
           )
         );
 
         this.health = Math.min(this.health + 40, 100);
         return true;
+
+      case ItemType.Cheese:
+        if (this.health >= 100)
+          return false;
+
+        healedAmount = Math.min(100 - this.health, 30);
+
+        this.client?.socket.send(
+          packetFactory.serializePacket(
+            new Packet(
+              PacketType.HEALTH_CHANGE,
+              [this.location.x, this.location.y, -healedAmount, 1]
+            )
+          )
+        );
+
+        this.foodHealOverTime = 10;
+        this.foodHealOverTimeAmt = 0;
+        this.maxFoodHealOverTime = 5;
+
+        this.health = Math.min(this.health + 30, 100);
+        return true;
+
       case ItemType.Apple:
         if (this.health >= 100)
           return false;
