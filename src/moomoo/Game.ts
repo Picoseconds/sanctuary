@@ -14,7 +14,7 @@ import GameObject from "../gameobjects/GameObject";
 import { PacketType } from "../packets/PacketType";
 import FileAsync from 'lowdb/adapters/FileAsync';
 import { PacketFactory } from "../packets/PacketFactory";
-import { getWeaponDamage, getWeaponAttackDetails, getItemCost, getPlaceable, PrimaryWeapons, getWeaponGatherAmount, getPrerequisiteItem, getGroupID, Weapons } from "../items/items";
+import { getWeaponDamage, getWeaponAttackDetails, getItemCost, getPlaceable, PrimaryWeapons, getWeaponGatherAmount, getPrerequisiteItem, getGroupID, Weapons, getPrerequisiteWeapon } from "../items/items";
 import { gameObjectSizes, GameObjectType } from "../gameobjects/gameobjects";
 import { getUpgrades, getWeaponUpgrades } from './Upgrades';
 
@@ -888,7 +888,7 @@ export default class Game {
 
           if (item <= 15) {
             if (weaponUpgrades.includes(item)) {
-              let preItem = getPrerequisiteItem(item);
+              let preItem = getPrerequisiteWeapon(item);
 
               if (preItem) {
                 if (!(client.player.weapon == item - preItem || client.player.secondaryWeapon == item - preItem)) this.kickClient(client, "Kicked for hacks");
