@@ -987,7 +987,7 @@ export default class Game {
               let preItem = getPrerequisiteWeapon(item);
 
               if (preItem) {
-                if (!(client.player.weapon == item - preItem || client.player.secondaryWeapon == item - preItem)) this.kickClient(client, "Kicked for hacks");
+                if (!(client.player.weapon == preItem || client.player.secondaryWeapon == preItem)) this.kickClient(client, "Kicked for hacks");
               }
 
               if (Object.values(PrimaryWeapons).includes(item)) {
