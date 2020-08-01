@@ -395,6 +395,7 @@ export default class Player extends Entity {
     this.kills = 0;
     this.weapon = 0;
     this.secondaryWeapon = -1;
+    this.selectedWeapon = 0;
     this.primaryWeaponVariant = WeaponVariant.Normal;
     this.secondaryWeaponVariant = WeaponVariant.Normal;
     this.age = 1;
@@ -404,6 +405,13 @@ export default class Player extends Entity {
     this.disableRotation = false;
     this.moveDirection = null;
     this.items = [ItemType.Apple, ItemType.WoodWall, ItemType.Spikes, ItemType.Windmill];
+
+    this.upgradeAge = 2;
+    this.kills = 0;
+    this.points = 0;
+    this.food = 0;
+    this.wood = 0;
+    this.stone = 0;
 
     this.client?.socket.send(
       packetFactory.serializePacket(
