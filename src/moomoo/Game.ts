@@ -427,7 +427,12 @@ export default class Game {
           for (let hitPlayer of hitPlayers) {
             if (hitPlayer.clanName == player.clanName && hitPlayer.clanName != null) continue;
 
-            let dmg = getWeaponDamage(player.weapon, player.weaponVariant);
+            let dmg = getWeaponDamage(
+              player.selectedWeapon,
+              player.selectedWeapon == player.weapon ?
+                player.primaryWeaponVariant :
+                player.secondaryWeaponVariant
+            );
 
             hitPlayer.health -= dmg;
             if (hitPlayer.health <= 0 && hitPlayer.client) {

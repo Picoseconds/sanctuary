@@ -41,7 +41,8 @@ export default class Player extends Entity {
   public weapon: PrimaryWeapons = 0;
   public secondaryWeapon: SecondaryWeapons = -1;
   public selectedWeapon: Weapons = 0;
-  public weaponVariant = WeaponVariant.Normal;
+  public primaryWeaponVariant = WeaponVariant.Normal;
+  public secondaryWeaponVariant = WeaponVariant.Normal;
   public buildItem = -1;
   public items: ItemType[] = [ItemType.Apple, ItemType.WoodWall, ItemType.Spikes, ItemType.Windmill];
 
@@ -323,7 +324,11 @@ export default class Player extends Entity {
     this.dead = true;
     this.kills = 0;
     this.weapon = 0;
-    this.weaponVariant = WeaponVariant.Normal;
+    this.secondaryWeapon = -1;
+    this.primaryWeaponVariant = WeaponVariant.Normal;
+    this.secondaryWeaponVariant = WeaponVariant.Normal;
+    this.age = 1;
+    this.xp = 0;
     this.buildItem = -1;
     this.autoAttackOn = false;
     this.disableRotation = false;
@@ -360,7 +365,9 @@ export default class Player extends Entity {
       this.angle,
       this.buildItem,
       this.selectedWeapon,
-      this.weaponVariant,
+      this.selectedWeapon == this.weapon ?
+        this.primaryWeaponVariant :
+        this.secondaryWeaponVariant,
       this.clanName,
       this.isClanLeader ? 1 : 0,
       this.hatID,
