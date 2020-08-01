@@ -71,12 +71,11 @@ function pointCircle(point: Vec2, circlePos: Vec2, r: number) {
 }
 
 function getAttackLocation(player: Player) {
-  let range = getWeaponAttackDetails(player.weapon).attackRange;
+  let range = getWeaponAttackDetails(player.selectedWeapon).attackRange;
   return new Vec2(Math.cos(player.angle) * range, Math.sin(player.angle) * range).add(player.location);
 }
 
-function checkAttack(player: Player, angle: number, players: Player[]) {
-  let weaponDetails = getWeaponAttackDetails(player.weapon);
+function checkAttack(player: Player, players: Player[]) {
   let hitPlayers: Player[] = [];
 
   for (let hitPlayer of players) {
@@ -94,7 +93,7 @@ function collideGameObjects(gameObject1: GameObject, gameObject2: GameObject) {
 function checkAttackGameObj(player: Player, gameObjects: GameObject[]) {
   const GATHER_RANGE = Math.PI / 2.6;
   let hitGameObjects: GameObject[] = [];
-  let range = getWeaponAttackDetails(player.weapon).attackRange;
+  let range = getWeaponAttackDetails(player.selectedWeapon).attackRange;
 
   for (let gameObject of gameObjects) {
     if (range + gameObject.scale < gameObject.location.distance(player.location)) continue;

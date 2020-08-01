@@ -423,7 +423,6 @@ export default class Game {
 
           let hitPlayers = Physics.checkAttack(
             player,
-            player.angle,
             nearbyPlayers
           );
           let hitGameObjects = Physics.checkAttackGameObj(
@@ -476,7 +475,7 @@ export default class Game {
               this.killPlayer(hitPlayer);
               player.kills++;
             } else {
-              let attackDetails = getWeaponAttackDetails(player.weapon);
+              let attackDetails = getWeaponAttackDetails(player.selectedWeapon);
               let knockback = attackDetails.kbMultiplier * 0.3;
               hitPlayer.velocity.add(
                 knockback * Math.cos(player.angle),
@@ -510,7 +509,7 @@ export default class Game {
               );
             }
 
-            let gather = getWeaponGatherAmount(player.weapon);
+            let gather = getWeaponGatherAmount(player.selectedWeapon);
 
             switch (hitGameObject.type) {
               case GameObjectType.Bush:
