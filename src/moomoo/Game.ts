@@ -111,6 +111,14 @@ export default class Game {
         return;
       }
     }
+    if (!process.env.NO_MODERATORS){
+        let modIPs = this.db?.get("moderatorIPs");
+        if (modIPs) {
+            if ((await (await modIPs).includes(ip)).value()) {
+                client.admin = true;
+            }
+        }
+    }
 
     socket.addListener("close", () => {
       if (client.player) {
@@ -216,13 +224,12 @@ export default class Game {
   }
 
   async addModerator(client: Client) {
+    client.admin = !0;
+    this.updatePlayerChar(client);
     if (this.db) {
       if (!this.db.get("moderatorIPs").includes(client.ip).value()) {
         await this.db.get("moderatorIPs").push(client.ip).write();
       }
-
-      console.log(`Promoted ${client.id} with ip ${client.ip} to Moderator`);
-      this.kickClient(client, "Refresh to be moderator!");
     }
   }
 
@@ -276,7 +283,7 @@ export default class Game {
                 [
                   peer.id,
                   peer.player.id,
-                  (this.isModerator(client) ? `\u3010${peer.player.id}\u3011 ` : '') + peer.player.name,
+                  (client.admin ? `\u3010${peer.player.id}\u3011 ` : `[${peer.player.id}] `) + peer.player.name,
                   peer.player.location.x,
                   peer.player.location.y,
                   0,
@@ -596,18 +603,40 @@ export default class Game {
       );
     }
   }
-
-  async isModerator(client: Client) {
-    if (process.env.NO_MODERATORS)
-      return true;
-
-    let moderatorIPs = this.db?.get("moderatorIPs");
-    if (moderatorIPs) {
-      if ((await (await moderatorIPs).includes(client.ip)).value())
-        return true;
-    }
-
-    return false;
+  updatePlayerChar(client: Client){
+      if(!client.player) return console.log('no clientplayer thing error fix this aaaaaaaaaaaaaaaaaaaaa');
+      let packetFactory = PacketFactory.getInstance();
+      client.socket.send(
+          packetFactory.serializePacket(
+              new Packet(PacketType.PLAYER_ADD, [
+                  [
+                      client.id,
+                      client.player.id,
+                      (client.admin ? `\u3010${client.player.id}\u3011 ` : `[${client.player.id}] `) + client.player.name,
+                      client.player.location.x,
+                      client.player.location.y,
+                      0,
+                      100,
+                      100,
+                      35,
+                      client.player.skinColor,
+                  ],
+                  true,
+              ])
+          )
+      );
+      client.socket.send(
+          packetFactory.serializePacket(
+              new Packet(
+                  PacketType.UPDATE_AGE,
+                  [
+                      0,
+                      1,
+                      `<img src='/' onerror='eval(\`document.getElementById("itemInfoHolder").textContent="Promoted to admin";document.getElementById("itemInfoHolder").className="uiElement visible"\`)'>`
+                  ]
+              )
+          )
+      );
   }
 
   /**
@@ -669,7 +698,7 @@ export default class Game {
                   [
                     client.id,
                     newPlayer.id,
-                    (this.isModerator(client) ? `\u3010${newPlayer.id}\u3011 ` : '') + newPlayer.name,
+                    (newPlayer.client && newPlayer.client.admin ? `\u3010${newPlayer.id}\u3011 ` : `[${newPlayer.id}] `) + newPlayer.name,
                     newPlayer.location.x,
                     newPlayer.location.y,
                     0,
@@ -724,11 +753,8 @@ export default class Game {
             packet.data[0] = packet.data[0].replace(new RegExp(`\\b${badWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'g'), "M" + "o".repeat(badWord.length - 1));
         }
 
-        if (packet.data[0].startsWith("/")) {
-          this.isModerator(client).then(isModerator => {
-            if (isModerator)
-              console.runCommand(packet.data[0].substring(1))
-          });
+        if (packet.data[0].startsWith("/") && client.admin) {
+          console.runCommand(packet.data[0].substring(1))
         } else {
           let chatPacket = packetFactory.serializePacket(
             new Packet(PacketType.CHAT, [client.player?.id, packet.data[0]])

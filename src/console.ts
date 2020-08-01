@@ -100,13 +100,8 @@ dispatcher.register(
           (player) => player.id == playerSID
         );
 
-        if (player && player.client) {
-          game.isModerator(player.client).then(
-            isModerator => {
-              if (!isModerator && game && player && player.client)
-                game.banClient(player.client);
-            }
-          );
+        if (player && player.client && !player.client.admin) {
+            game.banClient(player.client);
         }
       }
 
