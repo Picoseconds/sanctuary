@@ -8,8 +8,8 @@
     "build": "tsc -b tsconfig.json"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Picoseconds",
+  "license": "WTFPL",
   "devDependencies": {
     "@types/node": "^14.0.24",
     "cz-conventional-changelog": "3.2.0",
