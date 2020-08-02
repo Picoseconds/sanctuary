@@ -57,6 +57,7 @@ export default class Game {
     this.started = true;
     this.lastUpdate = Date.now();
     this.generateStructures();
+    setInterval(this.sendLeaderboardUpdates.bind(this), 2000);
     process.nextTick(this.update);
   }
 
@@ -312,14 +313,8 @@ export default class Game {
     }
   }
 
-  /**
-   * Called every once in a while to send new data
-   */
-  tick() {
+  sendLeaderboardUpdates() {
     let packetFactory = PacketFactory.getInstance();
-
-    this.sendPlayerUpdates();
-
     let leaderboardUpdate: (string | number)[] = [];
 
     for (let player of stableSort(this.state.players.filter(player => !player.dead), (a, b) => {
@@ -340,6 +335,13 @@ export default class Game {
         )
       );
     }
+  }
+
+  /**
+   * Called every once in a while to send new data
+   */
+  tick() {
+    this.sendPlayerUpdates();
   }
 
   /**
