@@ -96,15 +96,17 @@ export default class Player extends Entity {
     }
 
     if (this.foodHealOverTimeAmt < this.maxFoodHealOverTime) {
-      this.client?.socket.send(
-        packetFactory.serializePacket(
-          new Packet(
-            PacketType.HEALTH_CHANGE,
-            [this.location.x, this.location.y, -Math.min(100 - this.health, this.foodHealOverTime), 1]
+      if (100 - this.health > 0) {
+        this.client?.socket.send(
+          packetFactory.serializePacket(
+            new Packet(
+              PacketType.HEALTH_CHANGE,
+              [this.location.x, this.location.y, -Math.min(100 - this.health, this.foodHealOverTime), 1]
+            )
           )
-        )
-      );
-      this.health = Math.min(this.health + this.foodHealOverTime, 100);
+        );
+        this.health = Math.min(this.health + this.foodHealOverTime, 100);
+      }
 
       this.foodHealOverTimeAmt++;
     } else {
