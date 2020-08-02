@@ -92,7 +92,7 @@ export default class Player extends Entity {
         );
       }
 
-      this.health += Math.min(this.health + healthRegen, 100);
+      this.health = Math.min(this.health + healthRegen, 100);
     }
 
     if (this.foodHealOverTimeAmt < this.maxFoodHealOverTime) {
