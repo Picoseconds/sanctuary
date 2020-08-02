@@ -307,7 +307,8 @@ export default class Player extends Entity {
         getScale(item),
         -1,
         undefined,
-        getGameObjID(item),
+        // getGameObjID(item),
+        item,
         this.id
       );
 
