@@ -322,7 +322,7 @@ export default class Game {
 
     let leaderboardUpdate: (string | number)[] = [];
 
-    for (let player of stableSort(this.state.players, (a, b) => {
+    for (let player of stableSort(this.state.players.filter(player => !player.dead), (a, b) => {
       if (a.points < b.points) return -1;
       if (a.points > b.points) return 1;
       return 0;
@@ -959,6 +959,7 @@ export default class Game {
               this.kickClient(client, "Kicked for hacks");
             } else {
               if (client.player.points >= (getHat(packet.data[1])?.price || 0)) {
+                client.player.points -= getHat(packet.data[1])?.price || 0;
                 client.ownedHats.push(packet.data[1]);
                 client.socket.send(
                   packetFactory.serializePacket(
