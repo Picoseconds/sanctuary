@@ -79,7 +79,20 @@ export default class Player extends Entity {
     let hat = getHat(this.hatID);
 
     if (hat) {
-      this.health += hat.healthRegen || 0;
+      let healthRegen = hat.healthRegen || 0;
+
+      if (healthRegen > 0) {
+        this.client?.socket.send(
+          packetFactory.serializePacket(
+            new Packet(
+              PacketType.HEALTH_CHANGE,
+              [this.location.x, this.location.y, -Math.min(100 - this.health, healthRegen), 1]
+            )
+          )
+        );
+      }
+
+      this.health += Math.min(this.health + healthRegen, 100);
     }
 
     if (this.foodHealOverTimeAmt < this.maxFoodHealOverTime) {
