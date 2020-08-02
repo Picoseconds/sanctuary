@@ -716,6 +716,8 @@ export default class Game {
               newPlayer = player;
             }
 
+            this.sendLeaderboardUpdates();
+
             newPlayer.location = randomPos(14400, 14400);
             newPlayer.name =
               packet.data[0].name > 15 || packet.data[0].name === ""

@@ -415,6 +415,7 @@ export default class Player extends Entity {
     this.secondaryWeaponVariant = WeaponVariant.Normal;
     this.age = 1;
     this.xp = 0;
+    this.inTrap = false;
     this.buildItem = -1;
     this.autoAttackOn = false;
     this.disableRotation = false;
@@ -422,6 +423,7 @@ export default class Player extends Entity {
     this.items = [ItemType.Apple, ItemType.WoodWall, ItemType.Spikes, ItemType.Windmill];
 
     this.upgradeAge = 2;
+    this.maxXP = 300;
     this.kills = 0;
     this.points = 0;
     this.food = 0;
