@@ -14,7 +14,7 @@ import GameObject from "../gameobjects/GameObject";
 import { PacketType } from "../packets/PacketType";
 import FileAsync from 'lowdb/adapters/FileAsync';
 import { PacketFactory } from "../packets/PacketFactory";
-import { getWeaponDamage, getWeaponAttackDetails, getItemCost, getPlaceable, PrimaryWeapons, getWeaponGatherAmount, getPrerequisiteItem, getGroupID, Weapons, getPrerequisiteWeapon, getPlaceOffset } from "../items/items";
+import { getWeaponDamage, getWeaponAttackDetails, getItemCost, getPlaceable, PrimaryWeapons, getWeaponGatherAmount, getPrerequisiteItem, getGroupID, Weapons, getPrerequisiteWeapon, getPlaceOffset, getWeaponSpeedMultiplier } from "../items/items";
 import { gameObjectSizes, GameObjectType } from "../gameobjects/gameobjects";
 import { getUpgrades, getWeaponUpgrades } from './Upgrades';
 import { getHat } from './Hats';
@@ -562,6 +562,12 @@ export default class Game {
 
         if (player.hatID !== -1) {
           speedMult *= getHat(player.hatID)?.spdMult || 1;
+        }
+
+        if (player.buildItem == -1) {
+          speedMult *= getWeaponSpeedMultiplier(player.selectedWeapon);
+        } else {
+          speedMult *= 0.5;
         }
 
         Physics.moveTowards(
