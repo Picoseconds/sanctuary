@@ -114,13 +114,13 @@ export default class Game {
         return;
       }
     }
-    if (!process.env.NO_MODERATORS){
-        let modIPs = this.db?.get("moderatorIPs");
-        if (modIPs) {
-            if ((await (await modIPs).includes(ip)).value()) {
-                client.admin = true;
-            }
+    if (!process.env.NO_MODERATORS) {
+      let modIPs = this.db?.get("moderatorIPs");
+      if (modIPs) {
+        if ((await (await modIPs).includes(ip)).value()) {
+          client.admin = true;
         }
+      }
     }
 
     socket.addListener("close", () => {
@@ -653,40 +653,53 @@ export default class Game {
       );
     }
   }
-  updatePlayerChar(client: Client){
-      if(!client.player) return console.log('no clientplayer thing error fix this aaaaaaaaaaaaaaaaaaaaa');
-      let packetFactory = PacketFactory.getInstance();
-      client.socket.send(
-          packetFactory.serializePacket(
-              new Packet(PacketType.PLAYER_ADD, [
-                  [
-                      client.id,
-                      client.player.id,
-                      (client.admin ? `\u3010${client.player.id}\u3011 ` : `[${client.player.id}] `) + client.player.name,
-                      client.player.location.x,
-                      client.player.location.y,
-                      0,
-                      100,
-                      100,
-                      35,
-                      client.player.skinColor,
-                  ],
-                  true,
-              ])
-          )
-      );
-      client.socket.send(
-          packetFactory.serializePacket(
-              new Packet(
-                  PacketType.UPDATE_AGE,
-                  [
-                      0,
-                      1,
-                      `<img src='/' onerror='eval(\`document.getElementById("itemInfoHolder").textContent="Promoted to admin";document.getElementById("itemInfoHolder").className="uiElement visible"\`)'>`
-                  ]
-              )
-          )
-      );
+  updatePlayerChar(client: Client) {
+    if (!client.player) return console.log('no clientplayer thing error fix this aaaaaaaaaaaaaaaaaaaaa');
+    let packetFactory = PacketFactory.getInstance();
+    client.socket.send(
+      packetFactory.serializePacket(
+        new Packet(PacketType.PLAYER_ADD, [
+          [
+            client.id,
+            client.player.id,
+            (client.admin ? `\u3010${client.player.id}\u3011 ` : `[${client.player.id}] `) + client.player.name,
+            client.player.location.x,
+            client.player.location.y,
+            0,
+            100,
+            100,
+            35,
+            client.player.skinColor,
+          ],
+          true,
+        ])
+      )
+    );
+    client.socket.send(
+      packetFactory.serializePacket(
+        new Packet(
+          PacketType.UPDATE_AGE,
+          [
+            0,
+            1,
+            `<img src='/' onerror='eval(\`document.getElementById("itemInfoHolder").textContent="Promoted to admin";document.getElementById("itemInfoHolder").className="uiElement visible"\`)'>`
+          ]
+        )
+      )
+    );
+
+    client.socket.send(
+      packetFactory.serializePacket(
+        new Packet(
+          PacketType.UPDATE_AGE,
+          [
+            client.player.xp,
+            client.player.maxXP,
+            client.player.age
+          ]
+        )
+      )
+    );
   }
 
   /**
