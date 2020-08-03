@@ -151,8 +151,12 @@ function getGameObjID(item: ItemType) {
   return 0;
 }
 
+function hasCollision(item: ItemType) {
+  return items[item].group.layer >= 1;
+}
+
 function getWeaponSpeedMultiplier(weapon: Weapons) {
   return weapons[weapon].spdMult || 1;
 }
 
-export { PrimaryWeapons, SecondaryWeapons, getHitTime, Weapons, getWeaponAttackDetails, getWeaponDamage, getItemCost, getPlaceable, getPlaceOffset, getScale, getGameObjID, getWeaponGatherAmount, getPrerequisiteItem, getGroupID, getPrerequisiteWeapon, getWeaponSpeedMultiplier };
+export { PrimaryWeapons, SecondaryWeapons, getHitTime, Weapons, getWeaponAttackDetails, getWeaponDamage, getItemCost, getPlaceable, getPlaceOffset, getScale, getGameObjID, getWeaponGatherAmount, getPrerequisiteItem, getGroupID, getPrerequisiteWeapon, getWeaponSpeedMultiplier, hasCollision };

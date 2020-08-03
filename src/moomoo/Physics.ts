@@ -3,7 +3,7 @@ import Player from "./Player";
 import { eucDistance } from "./util";
 import GameObject from '../gameobjects/GameObject';
 import { gameObjectSizes } from "../gameobjects/gameobjects";
-import { getWeaponAttackDetails, Weapons } from "../items/items";
+import { getWeaponAttackDetails, Weapons, hasCollision } from "../items/items";
 import GameState from "./GameState";
 
 function collideCircles(pos1: Vec2, r1: number, pos2: Vec2, r2: number) {
@@ -38,6 +38,10 @@ function tryMovePlayer(player: Player, delta: number, xVel: number, yVel: number
   );
 
   for (let gameObj of player.getNearbyGameObjects(state)) {
+    if (!gameObj.type && typeof gameObj.data === 'number') {
+      if (!hasCollision(gameObj.data)) continue;
+    }
+
     if (collidePlayerGameObject(player, gameObj)) {
       xVel *= .75;
       yVel *= .75;
