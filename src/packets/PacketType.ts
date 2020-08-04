@@ -47,7 +47,8 @@ enum PacketType {
   CLAN_NOTIFY_SERVER,
   CLAN_NOTIFY_CLIENT,
   HEALTH_CHANGE,
-  JOIN_REQUEST
+  JOIN_REQUEST,
+  REMOVE_GAME_OBJ
 }
 
 export { PacketType };

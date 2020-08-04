@@ -39,7 +39,7 @@ enum Age6Items {
 }
 
 enum Age7Items {
-  Cheese = 18,
+  Cheese = 2,
   Turret = 33,
   Platform = 34,
   HealingPad = 35,

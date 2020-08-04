@@ -16,12 +16,13 @@ import {
   getPlaceable,
   getScale,
   getPlaceOffset,
-  getGameObjID
+  getGameObjID,
+  getGameObjHealth
 } from "../items/items";
 import { ItemType } from "../items/UpgradeItems";
-import Item from "../items/Item";
 import GameObject from "../gameobjects/GameObject";
 import { collideGameObjects } from "./Physics";
+import { getHat } from "./Hats";
 
 export default class Player extends Entity {
   public name: string;
@@ -30,16 +31,28 @@ export default class Player extends Entity {
   public game: Game;
 
   public lastPing: number = 0;
+  public lastDot = 0;
 
-  public hatID: number;
-  public accID: number;
+  public hatID: number = 0;
+  public accID: number = 0;
 
   public ownerID: string;
 
+  public upgradeAge = 2;
+
+  public foodHealOverTime = 0;
+  public foodHealOverTimeAmt = 0;
+  public maxFoodHealOverTime = -1;
+
+  public bleedDmg = 5;
+  public bleedAmt = 0;
+  public maxBleedAmt = -1;
+
   public weapon: PrimaryWeapons = 0;
-  public secondaryWeapon: SecondaryWeapons = 0;
+  public secondaryWeapon: SecondaryWeapons = -1;
   public selectedWeapon: Weapons = 0;
-  public weaponVariant = WeaponVariant.Normal;
+  public primaryWeaponVariant = WeaponVariant.Normal;
+  public secondaryWeaponVariant = WeaponVariant.Normal;
   public buildItem = -1;
   public items: ItemType[] = [ItemType.Apple, ItemType.WoodWall, ItemType.Spikes, ItemType.Windmill];
 
@@ -62,6 +75,53 @@ export default class Player extends Entity {
     this._kills = newKills;
   }
 
+  public damageOverTime() {
+    let packetFactory = PacketFactory.getInstance();
+    let hat = getHat(this.hatID);
+
+    if (hat) {
+      let healthRegen = hat.healthRegen || 0;
+
+      if (healthRegen > 0) {
+        this.client?.socket.send(
+          packetFactory.serializePacket(
+            new Packet(
+              PacketType.HEALTH_CHANGE,
+              [this.location.x, this.location.y, -Math.min(100 - this.health, healthRegen), 1]
+            )
+          )
+        );
+      }
+
+      this.health = Math.min(this.health + healthRegen, 100);
+    }
+
+    if (this.foodHealOverTimeAmt < this.maxFoodHealOverTime) {
+      if (100 - this.health > 0) {
+        this.client?.socket.send(
+          packetFactory.serializePacket(
+            new Packet(
+              PacketType.HEALTH_CHANGE,
+              [this.location.x, this.location.y, -Math.min(100 - this.health, this.foodHealOverTime), 1]
+            )
+          )
+        );
+        this.health = Math.min(this.health + this.foodHealOverTime, 100);
+      }
+
+      this.foodHealOverTimeAmt++;
+    } else {
+      this.foodHealOverTime = -1;
+    }
+
+    if (this.bleedAmt < this.maxBleedAmt) {
+      this.health -= this.bleedDmg;
+      this.bleedAmt++;
+    } else {
+      this.maxBleedAmt = -1;
+    }
+  }
+
   public maxXP = 300;
   public age = 1;
 
@@ -78,6 +138,12 @@ export default class Player extends Entity {
       this.age++;
       this.maxXP *= 1.2;
       newXP = 0;
+
+      this.client?.socket.send(
+        packetFactory.serializePacket(
+          new Packet(PacketType.UPGRADES, [this.age - this.upgradeAge + 1, this.upgradeAge])
+        )
+      );
     }
 
     this.client?.socket.send(
@@ -192,6 +258,10 @@ export default class Player extends Entity {
     }
 
     this._health = newHealth;
+
+    if (this._health <= 0 && !this.dead) {
+      this.die();
+    }
   }
 
   constructor(
@@ -237,9 +307,10 @@ export default class Player extends Entity {
         this.angle,
         getScale(item),
         -1,
-        undefined,
-        getGameObjID(item),
-        this.id
+        item === ItemType.PitTrap ? 0.3 * getScale(item) : undefined,
+        item,
+        this.id,
+        getGameObjHealth(item)
       );
 
       for (let gameObject of gameState.gameObjects) {
@@ -262,14 +333,39 @@ export default class Player extends Entity {
         healedAmount = Math.min(100 - this.health, 40);
 
         this.client?.socket.send(
-          new Packet(
-            PacketType.HEALTH_CHANGE,
-            [this.location.x, this.location.y, -healedAmount, 1]
+          packetFactory.serializePacket(
+            new Packet(
+              PacketType.HEALTH_CHANGE,
+              [this.location.x, this.location.y, -healedAmount, 1]
+            )
           )
         );
 
         this.health = Math.min(this.health + 40, 100);
         return true;
+
+      case ItemType.Cheese:
+        if (this.health >= 100)
+          return false;
+
+        healedAmount = Math.min(100 - this.health, 30);
+
+        this.client?.socket.send(
+          packetFactory.serializePacket(
+            new Packet(
+              PacketType.HEALTH_CHANGE,
+              [this.location.x, this.location.y, -healedAmount, 1]
+            )
+          )
+        );
+
+        this.foodHealOverTime = 10;
+        this.foodHealOverTimeAmt = 0;
+        this.maxFoodHealOverTime = 5;
+
+        this.health = Math.min(this.health + 30, 100);
+        return true;
+
       case ItemType.Apple:
         if (this.health >= 100)
           return false;
@@ -315,11 +411,26 @@ export default class Player extends Entity {
     this.dead = true;
     this.kills = 0;
     this.weapon = 0;
-    this.weaponVariant = WeaponVariant.Normal;
+    this.secondaryWeapon = -1;
+    this.selectedWeapon = 0;
+    this.primaryWeaponVariant = WeaponVariant.Normal;
+    this.secondaryWeaponVariant = WeaponVariant.Normal;
+    this.age = 1;
+    this.xp = 0;
+    this.inTrap = false;
     this.buildItem = -1;
     this.autoAttackOn = false;
     this.disableRotation = false;
     this.moveDirection = null;
+    this.items = [ItemType.Apple, ItemType.WoodWall, ItemType.Spikes, ItemType.Windmill];
+
+    this.upgradeAge = 2;
+    this.maxXP = 300;
+    this.kills = 0;
+    this.points = 0;
+    this.food = 0;
+    this.wood = 0;
+    this.stone = 0;
 
     this.client?.socket.send(
       packetFactory.serializePacket(
@@ -352,7 +463,9 @@ export default class Player extends Entity {
       this.angle,
       this.buildItem,
       this.selectedWeapon,
-      this.weaponVariant,
+      this.selectedWeapon == this.weapon ?
+        this.primaryWeaponVariant :
+        this.secondaryWeaponVariant,
       this.clanName,
       this.isClanLeader ? 1 : 0,
       this.hatID,

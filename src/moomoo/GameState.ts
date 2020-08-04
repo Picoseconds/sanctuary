@@ -18,6 +18,25 @@ export default class GameState {
     this.game = game;
   }
 
+  removeGameObject(gameObject: GameObject) {
+    let packetFactory = PacketFactory.getInstance();
+    this.gameObjects.splice(this.gameObjects.indexOf(gameObject), 1);
+
+    for (let player of this.players) {
+      if (player.client && player.client.seenGameObjects.includes(gameObject.id)) {
+        player.client.seenGameObjects.splice(player.client.seenGameObjects.indexOf(gameObject.id), 1);
+        player.client.socket.send(
+          packetFactory.serializePacket(
+            new Packet(
+              PacketType.REMOVE_GAME_OBJ,
+              [gameObject.id]
+            )
+          )
+        );
+      }
+    }
+  }
+
   joinClan(player: Player, tribe: Tribe) {
     if (!tribe.membersSIDs.includes(player.id))
       tribe.membersSIDs.push(player.id);
@@ -45,7 +64,6 @@ export default class GameState {
             new Packet(PacketType.SET_CLAN_PLAYERS, [data])
           )
         );
-        console.log(data);
       }
     }
   }
