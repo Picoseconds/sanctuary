@@ -1,5 +1,7 @@
 import Vec2 from "vec2";
 import { GameObjectType } from './gameobjects';
+import Player from "../moomoo/Player";
+import { Tribe } from "../moomoo/Tribes";
 
 export default class GameObject {
   constructor(
@@ -10,7 +12,8 @@ export default class GameObject {
     public type: GameObjectType = GameObjectType.Tree,
     public realScale: number = scale,
     public data: any = null,
-    public ownerSID: number = -1
+    public ownerSID: number = -1,
+    public health: number = -1
   ) {}
 
   getData() {
@@ -24,5 +27,19 @@ export default class GameObject {
 			this.data,
 			this.ownerSID
 		];
+  }
+
+  isPlayerGameObject() {
+    return this.type === -1 && typeof this.data === 'number';
+  }
+
+  isEnemy(player: Player, tribes: Tribe[]) {
+    if (this.ownerSID === player.id) return false;
+
+    for (let tribe of tribes) {
+      if (tribe.membersSIDs.includes(player.id) && tribe.membersSIDs.includes(this.ownerSID)) return false;
+    }
+
+    return true;
   }
 }

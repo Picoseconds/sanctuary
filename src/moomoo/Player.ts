@@ -16,7 +16,8 @@ import {
   getPlaceable,
   getScale,
   getPlaceOffset,
-  getGameObjID
+  getGameObjID,
+  getGameObjHealth
 } from "../items/items";
 import { ItemType } from "../items/UpgradeItems";
 import GameObject from "../gameobjects/GameObject";
@@ -306,10 +307,10 @@ export default class Player extends Entity {
         this.angle,
         getScale(item),
         -1,
-        undefined,
-        // getGameObjID(item),
+        item === ItemType.PitTrap ? 0.3 * getScale(item) : undefined,
         item,
-        this.id
+        this.id,
+        getGameObjHealth(item)
       );
 
       for (let gameObject of gameState.gameObjects) {
