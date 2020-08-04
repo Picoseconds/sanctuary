@@ -152,11 +152,53 @@ function getGameObjID(item: ItemType) {
 }
 
 function hasCollision(item: ItemType) {
-  return items[item].group.layer >= 1;
+  return items[item].group.layer >= 0;
 }
 
 function getWeaponSpeedMultiplier(weapon: Weapons) {
   return weapons[weapon].spdMult || 1;
 }
 
-export { PrimaryWeapons, SecondaryWeapons, getHitTime, Weapons, getWeaponAttackDetails, getWeaponDamage, getItemCost, getPlaceable, getPlaceOffset, getScale, getGameObjID, getWeaponGatherAmount, getPrerequisiteItem, getGroupID, getPrerequisiteWeapon, getWeaponSpeedMultiplier, hasCollision };
+function getStructureDamage(weapon: Weapons) {
+  let weaponData = weapons[weapon];
+
+  if (weaponData.dmg) {
+    if (weaponData.sDmg)
+      return weaponData.dmg * weaponData.sDmg;
+
+    return weaponData.dmg;
+  }
+
+  return 0;
+}
+
+function getGameObjHealth(item: ItemType) {
+  return items[item].health || -1;
+}
+
+function getGameObjDamage(item: ItemType) {
+  return items[item].dmg || 0;
+}
+
+export {
+  PrimaryWeapons,
+  SecondaryWeapons,
+  getHitTime,
+  Weapons,
+  getWeaponAttackDetails,
+  getWeaponDamage,
+  getItemCost,
+  getPlaceable,
+  getPlaceOffset,
+  getScale,
+  getGameObjID,
+  getWeaponGatherAmount,
+  getPrerequisiteItem,
+  getGroupID,
+  getPrerequisiteWeapon,
+  getWeaponSpeedMultiplier,
+  hasCollision,
+  getStructureDamage,
+  getGameObjHealth,
+  getGameObjDamage
+};

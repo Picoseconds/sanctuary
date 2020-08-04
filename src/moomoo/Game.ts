@@ -14,7 +14,7 @@ import GameObject from "../gameobjects/GameObject";
 import { PacketType } from "../packets/PacketType";
 import FileAsync from 'lowdb/adapters/FileAsync';
 import { PacketFactory } from "../packets/PacketFactory";
-import { getWeaponDamage, getWeaponAttackDetails, getItemCost, getPlaceable, PrimaryWeapons, getWeaponGatherAmount, getPrerequisiteItem, getGroupID, Weapons, getPrerequisiteWeapon, getPlaceOffset, getWeaponSpeedMultiplier } from "../items/items";
+import { getWeaponDamage, getWeaponAttackDetails, getItemCost, getPlaceable, PrimaryWeapons, getWeaponGatherAmount, getPrerequisiteItem, getGroupID, Weapons, getPrerequisiteWeapon, getPlaceOffset, getWeaponSpeedMultiplier, getStructureDamage } from "../items/items";
 import { gameObjectSizes, GameObjectType } from "../gameobjects/gameobjects";
 import { getUpgrades, getWeaponUpgrades } from './Upgrades';
 import { getHat } from './Hats';
@@ -507,6 +507,42 @@ export default class Game {
           }
 
           for (let hitGameObject of hitGameObjects) {
+            if (hitGameObject.health !== -1) {
+              let dmgMult = 1;
+              let hat = getHat(player.hatID);
+
+              if (hat && hat.bDmg)
+                dmgMult *= hat.bDmg;
+
+              hitGameObject.health -= getStructureDamage(player.selectedWeapon) * dmgMult;
+
+              if (hitGameObject.health <= 0) {
+                let itemCost = getItemCost(hitGameObject.data);
+                let costs = chunk(itemCost, 2);
+
+                for (let cost of costs) {
+                  switch (cost[0]) {
+                    case "food":
+                      player.food += cost[1] as number;
+                      break;
+                    case "wood":
+                      player.wood += cost[1] as number;
+                      break;
+                    case "stone":
+                      player.stone += cost[1] as number;
+                      break;
+                  }
+                }
+
+                this.state.removeGameObject(hitGameObject);
+                this.sendGameObjects(player);
+
+                for (let otherPlayer of player.getNearbyPlayers(this.state)) {
+                  this.sendGameObjects(otherPlayer);
+                }
+              }
+            }
+
             for (let nearbyPlayer of nearbyPlayers) {
               nearbyPlayer.client?.socket.send(
                 packetFactory.serializePacket(
