@@ -101,6 +101,8 @@ export default class Game {
     // Only start on first connection to save resources
     if (!this.started) this.start();
 
+    if (this.clients.filter(client => client.ip === ip).length >= 2) return;
+
     let packetFactory = PacketFactory.getInstance();
 
     if (this.clients.some((client) => client.id === id))
