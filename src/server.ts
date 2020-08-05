@@ -57,7 +57,6 @@ app.get('/', (req, res) => {
 });
 
 app.get('/api/v1/playerCount', (_req, res) => {
-
   let game = getGame();
 
   if (!game) {
@@ -85,7 +84,7 @@ app.get('/api/v1/players', (req, res) => {
       );
     }
 
-    res.send(JSON.stringify({ type: "success", data: JSON.stringify(clients) }));
+    res.send(JSON.stringify({ type: "success", clients: clients }));
   }
 });
 
