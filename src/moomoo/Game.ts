@@ -854,7 +854,7 @@ export default class Game {
         }
 
         if (packet.data[0].startsWith("/") && client.admin) {
-          console.runCommand(packet.data[0].substring(1))
+          console.runCommand(packet.data[0].substring(1), client.player || undefined);
         } else {
           let chatPacket = packetFactory.serializePacket(
             new Packet(PacketType.CHAT, [client.player?.id, packet.data[0]])
