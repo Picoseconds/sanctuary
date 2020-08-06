@@ -250,20 +250,22 @@ export default class Player extends Entity {
   }
 
   public set health(newHealth: number) {
-    let packetFactory = PacketFactory.getInstance();
+    if (!this.client?.admin) {
+      let packetFactory = PacketFactory.getInstance();
 
-    for (let client of this.game.clients) {
-      client?.socket.send(
-        packetFactory.serializePacket(
-          new Packet(PacketType.HEALTH_UPDATE, [this.id, newHealth])
-        )
-      );
-    }
+      for (let client of this.game.clients) {
+        client?.socket.send(
+          packetFactory.serializePacket(
+            new Packet(PacketType.HEALTH_UPDATE, [this.id, newHealth])
+          )
+        );
+      }
 
-    this._health = newHealth;
+      this._health = newHealth;
 
-    if (this._health <= 0 && !this.dead && !this.client?.admin) {
-      this.die();
+      if (this._health <= 0 && !this.dead) {
+        this.die();
+      }
     }
   }
 
