@@ -179,6 +179,45 @@ dispatcher.register(
         }
         return 0;
       }
+    ).then(argument("playerSID", integer())
+      .executes(
+        (context) => {
+          let playerSID = context.getArgument("playerSID", Number);
+          let game = getGame();
+          let variant = context.getArgument("variant", String);
+
+          if (game) {
+            let player = game.state.players.find(
+              (player) => player.id == playerSID
+            );
+
+            if (player) {
+              switch (variant) {
+                case "ruby":
+                  player.selectedWeapon === player.weapon ? player.primaryWeaponVariant = WeaponVariant.Ruby : player.secondaryWeaponVariant = WeaponVariant.Ruby;
+                  break;
+
+                case "diamond":
+                  player.selectedWeapon === player.weapon ? player.primaryWeaponVariant = WeaponVariant.Diamond : player.secondaryWeaponVariant = WeaponVariant.Diamond;
+                  break;
+
+                case "gold":
+                  player.selectedWeapon === player.weapon ? player.primaryWeaponVariant = WeaponVariant.Gold : player.secondaryWeaponVariant = WeaponVariant.Gold;
+                  break;
+
+                case "normal":
+                  player.selectedWeapon === player.weapon ? player.primaryWeaponVariant = WeaponVariant.Normal : player.secondaryWeaponVariant = WeaponVariant.Normal;
+                  break;
+
+                default:
+                  error("Invalid weapon variant " + variant);
+                  return 1;
+              }
+            }
+          }
+          return 0;
+        }
+      )
     )
   )
 );
