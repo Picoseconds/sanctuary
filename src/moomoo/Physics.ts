@@ -44,7 +44,7 @@ function tryMovePlayer(player: Player, delta: number, xVel: number, yVel: number
   
      switch(gameObj.data){
         case ItemType.PitTrap:
-          gameObj.isEnemy && (inTrap = !0);
+          gameObj.isEnemy(player, state.tribes) && (inTrap = !0);
           break;
         case ItemType.BoostPad/2:
           player.velocity.add(Math.cos(gameObj.angle) * 0.3, Math.sin(gameObj.angle) * 0.3);
