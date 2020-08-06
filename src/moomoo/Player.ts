@@ -37,6 +37,7 @@ export default class Player extends Entity {
   public accID: number = 0;
 
   public ownerID: string;
+  public spdMult: number = 1;
 
   public upgradeAge = 2;
 

@@ -598,7 +598,7 @@ export default class Game {
 
     for (let player of this.state.players) {
       if (player.moveDirection !== null) {
-        let speedMult = player.location.y > 2400 ? 1 : 0.8;
+        let speedMult = player.location.y > 2400 ? player.spdMult : 0.8 * player.spdMult;
 
         if (player.hatID !== -1) {
           speedMult *= getHat(player.hatID)?.spdMult || 1;
