@@ -128,7 +128,7 @@ dispatcher.register(
 );
 
 dispatcher.register(
-  literal("invisible").then(argument("speedMultiplier", integer()).executes((context) => {
+  literal("speed").then(argument("speedMultiplier", integer()).executes((context) => {
     let thisPlayer = context.getSource() as Player;
     let game = getGame();
 
