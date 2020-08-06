@@ -113,6 +113,21 @@ dispatcher.register(
 );
 
 dispatcher.register(
+  literal("invisible").executes((context) => {
+    let thisPlayer = context.getSource() as Player;
+    let game = getGame();
+
+    if (game) {
+      if (thisPlayer) {
+        thisPlayer.invisible = !thisPlayer.invisible;
+      }
+    }
+
+    return 0;
+  })
+);
+
+dispatcher.register(
   literal("ban").then(
     argument("playerSID", integer()).executes((context) => {
       let playerSID = context.getArgument("playerSID", Number);
@@ -124,7 +139,7 @@ dispatcher.register(
         );
 
         if (player && player.client && !player.client.admin) {
-            game.banClient(player.client);
+          game.banClient(player.client);
         }
       }
 

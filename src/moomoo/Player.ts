@@ -61,6 +61,8 @@ export default class Player extends Entity {
 
   private _kills: number = 0;
 
+  public invisible = false;
+
   public get kills(): number {
     return this._kills;
   }

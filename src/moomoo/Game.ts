@@ -262,7 +262,9 @@ export default class Game {
         playerUpdate = client.player.getUpdateData(this.state);
 
       for (let player of client.player.getNearbyPlayers(this.state)) {
-        playerUpdate = playerUpdate.concat(player.getUpdateData(this.state));
+        if (!player.invisible) {
+          playerUpdate = playerUpdate.concat(player.getUpdateData(this.state));
+        }
       }
     }
 
