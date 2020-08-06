@@ -41,13 +41,16 @@ function tryMovePlayer(player: Player, delta: number, xVel: number, yVel: number
 
   for (let gameObj of player.getNearbyGameObjects(state)) {
     if (gameObj.isPlayerGameObject() && collidePlayerGameObject(player, gameObj)) {
-      if (
-        gameObj.data === ItemType.PitTrap &&
-        gameObj.isEnemy(player, state.tribes)
-      ) {
-        inTrap = true;
+  
+     switch(gameObj.data){
+        case ItemType.PitTrap:
+          gameObj.isEnemy && (inTrap = !0);
+          break;
+        case ItemType.BoostPad/2:
+          player.velocity.add(Math.cos(gameObj.angle) * 0.3, Math.sin(gameObj.angle) * 0.3);
+          break;
       }
-
+      
       let dmg = getGameObjDamage(gameObj.data);
 
       if (
