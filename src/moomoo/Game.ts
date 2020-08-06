@@ -321,7 +321,7 @@ export default class Game {
     let packetFactory = PacketFactory.getInstance();
     let leaderboardUpdate: (string | number)[] = [];
 
-    for (let player of stableSort(this.state.players.filter(player => !player.dead), (a, b) => {
+    for (let player of stableSort(this.state.players.filter(player => !player.dead && !player.invisible), (a, b) => {
       if (a.points < b.points) return -1;
       if (a.points > b.points) return 1;
       return 0;
