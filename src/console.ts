@@ -12,6 +12,7 @@ import {
   argument,
 } from "node-brigadier";
 import Player from "./moomoo/Player";
+import { WeaponVariant } from "./moomoo/Weapons";
 
 let command = "";
 let lastMessage = "";
@@ -140,6 +141,45 @@ dispatcher.register(
 
     return 0;
   })
+  )
+);
+
+dispatcher.register(
+  literal("weaponVariant").then(
+    argument("variant", string()).executes(
+      (context) => {
+        let thisPlayer = context.getSource() as Player;
+        let game = getGame();
+        let variant = context.getArgument("variant", String);
+
+        if (game) {
+          if (thisPlayer) {
+            switch (variant) {
+              case "ruby":
+                thisPlayer.selectedWeapon === thisPlayer.weapon ? thisPlayer.primaryWeaponVariant = WeaponVariant.Ruby : thisPlayer.secondaryWeaponVariant = WeaponVariant.Ruby;
+                break;
+
+              case "diamond":
+                thisPlayer.selectedWeapon === thisPlayer.weapon ? thisPlayer.primaryWeaponVariant = WeaponVariant.Diamond : thisPlayer.secondaryWeaponVariant = WeaponVariant.Diamond;
+                break;
+
+              case "gold":
+                thisPlayer.selectedWeapon === thisPlayer.weapon ? thisPlayer.primaryWeaponVariant = WeaponVariant.Gold : thisPlayer.secondaryWeaponVariant = WeaponVariant.Gold;
+                break;
+
+              case "normal":
+                thisPlayer.selectedWeapon === thisPlayer.weapon ? thisPlayer.primaryWeaponVariant = WeaponVariant.Normal : thisPlayer.secondaryWeaponVariant = WeaponVariant.Normal;
+                break;
+
+              default:
+                error("Invalid weapon variant " + variant);
+                return 1;
+            }
+          }
+        }
+        return 0;
+      }
+    )
   )
 );
 
