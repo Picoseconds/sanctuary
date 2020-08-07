@@ -133,7 +133,9 @@ export default class Game {
           this.state.players.splice(index, 1);
         }
 
-        this.state.gameObjects.filter(gameObj => gameObj.ownerSID != client.player?.id);
+        this.state.gameObjects.filter(gameObj => gameObj.ownerSID === client.player?.id).forEach(
+          gameObj => this.state.removeGameObject(gameObj)
+        );
 
         let tribeIndex = this.state.tribes.findIndex(
           tribe => tribe.ownerSID == client.player?.id
@@ -141,6 +143,10 @@ export default class Game {
 
         if (tribeIndex > -1)
           this.state.removeTribe(tribeIndex);
+
+        let clientIndex = this.clients.indexOf(client);
+        if (clientIndex > -1)
+          this.clients.splice(clientIndex, 1);
       }
     });
 
