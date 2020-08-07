@@ -143,11 +143,11 @@ export default class Game {
 
         if (tribeIndex > -1)
           this.state.removeTribe(tribeIndex);
-
-        let clientIndex = this.clients.indexOf(client);
-        if (clientIndex > -1)
-          this.clients.splice(clientIndex, 1);
       }
+
+      let clientIndex = this.clients.indexOf(client);
+      if (clientIndex > -1)
+        this.clients.splice(clientIndex, 1);
     });
 
     socket.addListener("message", (msg) => {
