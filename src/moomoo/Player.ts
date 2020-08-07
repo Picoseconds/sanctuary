@@ -297,7 +297,9 @@ export default class Player extends Entity {
   }
 
   public getWeaponHitTime() {
-    return getHitTime(this.selectedWeapon);
+    let base = getHitTime(this.selectedWeapon);
+    let hat = getHat(this.hatID);
+    return base * (hat?.atkSpd || 1);
   }
 
   public useItem(item: ItemType, gameState?: GameState, gameObjectID?: number) {
