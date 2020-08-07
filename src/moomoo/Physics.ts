@@ -28,7 +28,7 @@ function moveTowards(player: Player, angle: number, speed: number, deltaTime: nu
  * @param gameObj the GameObject to test collision for
  */
 function collidePlayerGameObject(player: Player, gameObj: GameObject) {
-  return collideCircles(player.location, 35, gameObj.location, gameObj.realScale);
+  return collideCircles(player.location, 35, gameObj.location, gameObj.data === ItemType.PitTrap ? 0.3 * gameObj.realScale : gameObj.realScale;
 }
 
 function tryMovePlayer(player: Player, delta: number, xVel: number, yVel: number, state: GameState) {

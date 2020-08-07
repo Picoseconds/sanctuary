@@ -40,6 +40,7 @@ export default class Player extends Entity {
   public spdMult: number = 1;
 
   public upgradeAge = 2;
+  public invincible = false;
 
   public foodHealOverTime = 0;
   public foodHealOverTimeAmt = 0;
@@ -312,7 +313,7 @@ export default class Player extends Entity {
         this.angle,
         getScale(item),
         -1,
-        item === ItemType.PitTrap ? 0.3 * getScale(item) : undefined,
+        undefined,
         item,
         this.id,
         getGameObjHealth(item)
