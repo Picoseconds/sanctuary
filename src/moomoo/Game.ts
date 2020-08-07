@@ -490,7 +490,7 @@ export default class Game {
               hitPlayer.maxBleedAmt = 5;
             }
 
-            if (hitPlayer.health <= 0 && hitPlayer.client && !hitPlayer.client.admin) {
+            if (hitPlayer.health <= 0 && hitPlayer.client && !hitPlayer.invincible) {
               this.killPlayer(hitPlayer);
               player.kills++;
             } else {

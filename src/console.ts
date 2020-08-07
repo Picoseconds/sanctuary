@@ -129,6 +129,21 @@ dispatcher.register(
 );
 
 dispatcher.register(
+  literal("invincible").executes((context) => {
+    let thisPlayer = context.getSource() as Player;
+    let game = getGame();
+
+    if (game) {
+      if (thisPlayer) {
+        thisPlayer.invincible = !thisPlayer.invincible;
+      }
+    }
+
+    return 0;
+  })
+);
+
+dispatcher.register(
   literal("speed").then(argument("speedMultiplier", integer()).executes((context) => {
     let thisPlayer = context.getSource() as Player;
     let game = getGame();

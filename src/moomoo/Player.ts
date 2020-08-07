@@ -250,7 +250,7 @@ export default class Player extends Entity {
   }
 
   public set health(newHealth: number) {
-    if (!this.client?.admin) {
+    if (!this.invincible) {
       let packetFactory = PacketFactory.getInstance();
 
       for (let client of this.game.clients) {
