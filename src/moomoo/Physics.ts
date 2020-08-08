@@ -31,38 +31,47 @@ function collidePlayerGameObject(player: Player, gameObj: GameObject) {
   return collideCircles(player.location, 35, gameObj.location, gameObj.realScale);
 }
 
-function tryMovePlayer(player: Player, delta: number, xVel: number, yVel: number, state: GameState) {
+function tryMovePlayer(
+  player: Player,
+  delta: number,
+  xVel: number,
+  yVel: number,
+  state: GameState
+) {
   let inTrap = false;
 
-  let newLocation = new Vec2(
-    player.location.x,
-    player.location.y
-  );
-  
+  let newLocation = new Vec2(player.location.x, player.location.y);
+
   for (let gameObj of player.getNearbyGameObjects(state)) {
-    if (gameObj.isPlayerGameObject() && collidePlayerGameObject(player, gameObj)) {
-     switch (gameObj.data) {
-      case ItemType.PitTrap:
-        gameObj.isEnemy(player, state.tribes) && (inTrap = !0);
-        break;
-       case ItemType.BoostPad / 2:
-        player.velocity.add(Math.cos(gameObj.angle) * 0.3, Math.sin(gameObj.angle) * 0.3);
-        break;
-       }
-      
+    if (
+      gameObj.isPlayerGameObject() &&
+      collidePlayerGameObject(player, gameObj)
+    ) {
+      switch (gameObj.data) {
+        case ItemType.PitTrap:
+          gameObj.isEnemy(player, state.tribes) && (inTrap = !0);
+          break;
+        case ItemType.BoostPad / 2:
+          player.velocity.add(
+            Math.cos(gameObj.angle) * 0.3,
+            Math.sin(gameObj.angle) * 0.3
+          );
+          break;
+      }
+
       let dmg = getGameObjDamage(gameObj.data);
 
-      if (
-        dmg &&
-        gameObj.isEnemy(player, state.tribes)
-      ) {
+      if (dmg && gameObj.isEnemy(player, state.tribes)) {
         let hat = getHat(player.hatID);
 
         if (hat) {
           dmg *= hat.dmgMult || 1;
         }
 
-        let angle = Math.atan2(player.location.y - gameObj.location.y, player.location.x - gameObj.location.x);
+        let angle = Math.atan2(
+          player.location.y - gameObj.location.y,
+          player.location.x - gameObj.location.x
+        );
         player.velocity.add(Math.cos(angle), Math.sin(angle));
         player.health -= dmg;
       }
@@ -71,10 +80,13 @@ function tryMovePlayer(player: Player, delta: number, xVel: number, yVel: number
     }
 
     if (collidePlayerGameObject(player, gameObj)) {
-      xVel *= .75;
-      yVel *= .75;
+      xVel *= 0.75;
+      yVel *= 0.75;
 
-      let angle = Math.atan2(newLocation.y - gameObj.location.y, newLocation.x - gameObj.location.x);
+      let angle = Math.atan2(
+        newLocation.y - gameObj.location.y,
+        newLocation.x - gameObj.location.x
+      );
 
       newLocation = new Vec2(
         gameObj.location.x + Math.cos(angle) * (gameObj.realScale + 35),
@@ -89,6 +101,7 @@ function tryMovePlayer(player: Player, delta: number, xVel: number, yVel: number
   newLocation.clamp(new Vec2(0 + 35, 0 + 35), new Vec2(14400 - 35, 14400 - 35));
   player.location = newLocation.add(delta * xVel, delta * yVel);
 }
+
 
 function movePlayer(player: Player, delta: number, state: GameState) {
   if (player.velocity.x || player.velocity.y) {
