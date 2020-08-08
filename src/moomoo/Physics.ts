@@ -89,10 +89,21 @@ function tryMovePlayer(player: Player, delta: number, xVel: number, yVel: number
 }
 
 function movePlayer(player: Player, delta: number, state: GameState) {
-  if (player.velocity.x || player.velocity.y) {
+if (player.velocity.x || player.velocity.y) {
     tryMovePlayer(player, delta, player.velocity.x, player.velocity.y, state);
     player.velocity = player.velocity.multiply(0.993 ** delta, 0.993 ** delta);
   }
+     for (let p of player.getNearbyPlayers(state)) {
+    if (collideCircles(p.location, 30, player.location, 30)) {
+        let dis = player.location.distance(p.location);
+        let angle = Math.atan2(p.location.y - player.location.y, p.location.x - player.location.x);
+        let distanceToMove = (30 + 30) - dis;
+        p.location.add(Math.cos(angle) * distanceToMove, Math.sin(angle) * distanceToMove);
+        player.location.add(-Math.cos(angle) * distanceToMove, -Math.sin(angle) * distanceToMove);
+        tryMovePlayer(p, delta, p.velocity.x, p.velocity.y, state);
+        tryMovePlayer(player, delta, player.velocity.x, player.velocity.y, state);
+    }
+}
 }
 
 function pointCircle(point: Vec2, circlePos: Vec2, r: number) {
