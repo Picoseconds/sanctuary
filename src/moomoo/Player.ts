@@ -17,7 +17,9 @@ import {
   getScale,
   getPlaceOffset,
   getGameObjID,
-  getGameObjHealth
+  getGameObjHealth,
+  getGameObjPlaceLimit,
+  getGroupID
 } from "../items/items";
 import { ItemType } from "../items/UpgradeItems";
 import GameObject from "../gameobjects/GameObject";
@@ -306,6 +308,10 @@ export default class Player extends Entity {
     let packetFactory = PacketFactory.getInstance();
 
     if (getPlaceable(item) && gameState && gameObjectID) {
+      let placeLimit = getGameObjPlaceLimit(item);
+      let placedAmount = gameState.gameObjects.filter(gameObj => gameObj.data === item && gameObj.ownerSID == this.id).length
+      if (placedAmount >= placeLimit) return;
+
       let offset = 35 + getScale(item) + (getPlaceOffset(item) || 0);
       let location = this.location.add(offset * Math.cos(this.angle), offset * Math.sin(this.angle), true);
 
@@ -327,6 +333,14 @@ export default class Player extends Entity {
       }
 
       gameState?.gameObjects.push(newGameObject);
+      this.client?.socket.send(
+        packetFactory.serializePacket(
+          new Packet(
+            PacketType.UPDATE_PLACE_LIMIT,
+            [getGroupID(item), placedAmount + 1]
+          )
+        )
+      );
 
       return true;
     }

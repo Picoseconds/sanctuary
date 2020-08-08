@@ -180,6 +180,10 @@ function getGameObjDamage(item: ItemType) {
   return items[item].dmg || 0;
 }
 
+function getGameObjPlaceLimit(item: ItemType) {
+  return items[item].group.limit || Infinity;
+}
+
 export {
   PrimaryWeapons,
   SecondaryWeapons,
@@ -200,5 +204,6 @@ export {
   hasCollision,
   getStructureDamage,
   getGameObjHealth,
-  getGameObjDamage
+  getGameObjDamage,
+  getGameObjPlaceLimit
 };

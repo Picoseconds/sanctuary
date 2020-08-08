@@ -54,6 +54,7 @@ packetTypeMapping[PacketType.UPDATE_AGE] = { value: "15", side: Side.Client };
 packetTypeMapping[PacketType.UPDATE_HEALTH] = { value: "h", side: Side.Client };
 packetTypeMapping[PacketType.CLAN_NOTIFY_SERVER] = { value: "14", side: Side.Server };
 packetTypeMapping[PacketType.CLAN_NOTIFY_CLIENT] = { value: "p", side: Side.Client };
+packetTypeMapping[PacketType.UPDATE_PLACE_LIMIT] = { value: "14", side: Side.Client };
 packetTypeMapping[PacketType.SPAWN] = { value: "sp", side: Side.Server };
 packetTypeMapping[PacketType.UPDATE_ITEMS] = { value: "17", side: Side.Client };
 packetTypeMapping[PacketType.UPDATE_STORE] = { value: "us", side: Side.Client };
