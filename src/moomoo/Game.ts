@@ -151,15 +151,6 @@ export default class Game {
     });
 
     socket.addListener("message", (msg) => {
-      if (Date.now() - client.lastPacket < 50) {
-        client.packets++;
-
-        if (client.packets > 10) this.kickClient(client, `Too many packets!`);
-      } else {
-        client.packets = 0;
-        client.lastPacket = Date.now();
-      }
-
       try {
         if (msg instanceof ArrayBuffer) {
           this.onMsg(client, packetFactory.deserializePacket(msg, Side.Server));
@@ -174,11 +165,11 @@ export default class Game {
         } else {
           this.kickClient(
             client,
-            "Message recieved was not an ArrayBuffer or a Buffer!"
+            "Kicked for hacks"
           );
         }
       } catch (e) {
-        // this.kickClient(client, `Invalid message: ${e}`);
+        this.kickClient(client, "Kicked for hacks");
       }
     });
 
