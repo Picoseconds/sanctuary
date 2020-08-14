@@ -184,6 +184,10 @@ function getGameObjPlaceLimit(item: ItemType) {
   return items[item].group.limit || Infinity;
 }
 
+function shouldHideFromEnemy(item: ItemType) {
+  return !!items[item].hideFromEnemy;
+}
+
 export {
   PrimaryWeapons,
   SecondaryWeapons,
@@ -205,5 +209,6 @@ export {
   getStructureDamage,
   getGameObjHealth,
   getGameObjDamage,
-  getGameObjPlaceLimit
+  getGameObjPlaceLimit,
+  shouldHideFromEnemy
 };

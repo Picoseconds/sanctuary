@@ -19,7 +19,8 @@ import {
   getGameObjID,
   getGameObjHealth,
   getGameObjPlaceLimit,
-  getGroupID
+  getGroupID,
+  shouldHideFromEnemy
 } from "../items/items";
 import { ItemType } from "../items/UpgradeItems";
 import GameObject from "../gameobjects/GameObject";
@@ -408,7 +409,7 @@ export default class Player extends Entity {
     }
   }
 
-  public getNearbyGameObjects(state: GameState) {
+  public getNearbyGameObjects(state: GameState, includeHidden = false) {
     const RADIUS = process.env.GAMEOBJECT_NEARBY_RADIUS || 1250;
 
     let gameObjects = [];
@@ -420,7 +421,13 @@ export default class Player extends Entity {
           [gameObject.location.x, gameObject.location.y]
         ) < RADIUS
       ) {
-        gameObjects.push(gameObject);
+        if (
+          !(gameObject.isPlayerGameObject() &&
+            shouldHideFromEnemy(gameObject.data) &&
+            gameObject.isEnemy(this, state.tribes)) || includeHidden
+        ) {
+          gameObjects.push(gameObject);
+        }
       }
     }
 

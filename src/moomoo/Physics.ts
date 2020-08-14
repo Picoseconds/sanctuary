@@ -5,6 +5,9 @@ import { getWeaponAttackDetails, hasCollision, getGameObjDamage } from "../items
 import GameState from "./GameState";
 import { ItemType } from "../items/UpgradeItems";
 import { getHat } from "./Hats";
+import { PacketType } from "../packets/PacketType";
+import { Packet } from "../packets/Packet";
+import { PacketFactory } from "../packets/PacketFactory";
 
 function collideCircles(pos1: Vec2, r1: number, pos2: Vec2, r2: number) {
   return pos1.distance(pos2) <= r1 + r2;
@@ -33,14 +36,25 @@ function collidePlayerGameObject(player: Player, gameObj: GameObject) {
 
 function tryMovePlayer(player: Player, delta: number, xVel: number, yVel: number, state: GameState) {
   let inTrap = false;
+  let packetFactory = PacketFactory.getInstance();
 
   let newLocation = new Vec2(
     player.location.x,
     player.location.y
   );
 
-  for (let gameObj of player.getNearbyGameObjects(state)) {
+  for (let gameObj of player.getNearbyGameObjects(state, true)) {
     if (gameObj.isPlayerGameObject() && collidePlayerGameObject(player, gameObj)) {
+      if (!player.client?.seenGameObjects.includes(gameObj.id)) {
+        player.client?.socket.send(
+          packetFactory.serializePacket(
+            new Packet(PacketType.LOAD_GAME_OBJ, [gameObj.getData()])
+          )
+        );
+
+        player.client?.seenGameObjects.push(gameObj.id);
+      }
+
       if (
         gameObj.data === ItemType.PitTrap &&
         gameObj.isEnemy(player, state.tribes)

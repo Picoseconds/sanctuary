@@ -915,7 +915,6 @@ export default class Game {
               )
             )
           }
-
         }
         break;
       case PacketType.CLAN_ACC_JOIN:
@@ -929,6 +928,9 @@ export default class Game {
             player.clanName = tribe.name;
 
             this.state.joinClan(player, tribe);
+
+            // for pit traps to appear
+            this.sendGameObjects(player);
           }
         }
 
