@@ -152,7 +152,7 @@ function getGameObjID(item: ItemType) {
 }
 
 function hasCollision(item: ItemType) {
-  return items[item].group.layer >= 0;
+  return !items[item].ignoreCollision;
 }
 
 function getWeaponSpeedMultiplier(weapon: Weapons) {
