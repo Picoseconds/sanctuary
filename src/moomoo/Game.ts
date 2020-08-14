@@ -50,7 +50,7 @@ export default class Game {
   }
 
   async initDatabase() {
-    this.db = await (await lowdb(new FileAsync<DBSchema>('./.data/sanctuary.json')));
+    this.db = await lowdb(new FileAsync<DBSchema>('./.data/sanctuary.json'));
     this.db.defaults({ bannedIPs: [], moderatorIPs: [] })
       .write();
   }
