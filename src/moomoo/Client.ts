@@ -3,6 +3,7 @@ import Player from "./Player";
 
 export default class Client {
   public tribeJoinQueue: Player[] = [];
+  public lastAttackTime = 0;
 
   constructor(
     public id: string,

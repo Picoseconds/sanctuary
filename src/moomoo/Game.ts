@@ -22,6 +22,11 @@ import { WeaponVariant } from './Weapons';
 
 let currentGame: Game | null = null;
 
+const DEFAULT_MAX_CPS = 25;
+
+let MAX_CPS = (process.env.MAX_CPS && parseInt(process.env.MAX_CPS, 10)) || DEFAULT_MAX_CPS;
+if (isNaN(MAX_CPS)) MAX_CPS = DEFAULT_MAX_CPS;
+
 interface DBSchema {
   bannedIPs: string[];
   moderatorIPs: string[];
@@ -830,10 +835,19 @@ export default class Game {
       case PacketType.ATTACK:
         if (client.player) {
           if (packet.data[0]) {
+            if (Date.now() - client.lastAttackTime < 1000 / MAX_CPS) {
+              client.lastAttackTime = Date.now();
+              return;
+            }
+  
+            client.lastAttackTime = Date.now();
+
             this.normalAttack(client.player);
           } else {
             client.player.isAttacking = false;
           }
+        } else {
+          this.kickClient(client, "Kicked for hacks");
         }
         break;
       case PacketType.PLAYER_MOVE:
