@@ -74,15 +74,23 @@ export default class Game {
 
   generateStructures() {
     const gameObjectTypes = [GameObjectType.Tree, GameObjectType.Bush, GameObjectType.Mine, GameObjectType.GoldMine];
+    const desertGameObjectTypes = [GameObjectType.Bush, GameObjectType.Mine, GameObjectType.GoldMine];
+    const riverGameObjectTypes = [GameObjectType.Mine];
 
     outerLoop: for (let i = 0; i < 200; i++) {
+      let location = randomPos(14400, 14400);
       let gameObjectType =
-        gameObjectTypes[Math.floor(Math.random() * gameObjectTypes.length)];
+        location.y >= 12e3 ?
+          desertGameObjectTypes[Math.floor(Math.random() * desertGameObjectTypes.length)] :
+          (
+            location.y < 7550 && location.y > 6850 ?
+              riverGameObjectTypes[Math.floor(Math.random() * riverGameObjectTypes.length)] :
+              gameObjectTypes[Math.floor(Math.random() * gameObjectTypes.length)]
+          );
       let sizes = gameObjectSizes[gameObjectType];
 
       if (sizes) {
         let size = sizes[Math.floor(Math.random() * sizes.length)];
-        let location = randomPos(14400, 14400);
 
         let newGameObject = new GameObject(
           this.getNextGameObjectID(),
@@ -845,7 +853,7 @@ export default class Game {
               client.lastAttackTime = Date.now();
               return;
             }
-  
+
             client.lastAttackTime = Date.now();
 
             this.normalAttack(client.player);
