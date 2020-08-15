@@ -130,7 +130,7 @@ export default class Game {
     let client = this.clients[this.clients.push(new Client(id, socket, ip)) - 1];
     let bannedIPs = this.db?.get("bannedIPs");
     if (bannedIPs) {
-      if ((await (await bannedIPs).includes(ip)).value()) {
+      if (bannedIPs.includes(ip).value()) {
         this.kickClient(client, "You are banned");
         return;
       }
@@ -138,7 +138,7 @@ export default class Game {
     if (!process.env.NO_MODERATORS) {
       let modIPs = this.db?.get("moderatorIPs");
       if (modIPs) {
-        if ((await (await modIPs).includes(ip)).value()) {
+        if (modIPs.includes(ip).value()) {
           client.admin = true;
         }
       }
