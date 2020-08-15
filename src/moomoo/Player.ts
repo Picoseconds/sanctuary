@@ -20,7 +20,8 @@ import {
   getGameObjHealth,
   getGameObjPlaceLimit,
   getGroupID,
-  shouldHideFromEnemy
+  shouldHideFromEnemy,
+  getGameObjDamage
 } from "../items/items";
 import { ItemType } from "../items/UpgradeItems";
 import GameObject from "../gameobjects/GameObject";
@@ -325,7 +326,8 @@ export default class Player extends Entity {
         undefined,
         item,
         this.id,
-        getGameObjHealth(item)
+        getGameObjHealth(item),
+        getGameObjDamage(item)
       );
 
       for (let gameObject of gameState.gameObjects) {

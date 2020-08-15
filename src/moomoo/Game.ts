@@ -82,13 +82,19 @@ export default class Game {
 
       if (sizes) {
         let size = sizes[Math.floor(Math.random() * sizes.length)];
+        let location = randomPos(14400, 14400);
+
         let newGameObject = new GameObject(
           this.getNextGameObjectID(),
-          randomPos(14400, 14400),
+          location,
           0,
           size,
           gameObjectType,
-          gameObjectType == GameObjectType.Tree || gameObjectType == GameObjectType.Bush ? size * 0.6 : size
+          gameObjectType == GameObjectType.Tree || gameObjectType == GameObjectType.Bush ? size * 0.6 : size,
+          {},
+          -1,
+          -1,
+          gameObjectType == GameObjectType.Bush && location.y >= 12e3 ? 35 : 0,
         );
 
         for (let gameObject of this.state.gameObjects) {

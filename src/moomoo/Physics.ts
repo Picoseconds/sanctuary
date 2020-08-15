@@ -44,30 +44,33 @@ function tryMovePlayer(player: Player, delta: number, xVel: number, yVel: number
   );
 
   for (let gameObj of player.getNearbyGameObjects(state, true)) {
-    if (gameObj.isPlayerGameObject() && collidePlayerGameObject(player, gameObj)) {
-      if (!player.client?.seenGameObjects.includes(gameObj.id)) {
-        player.client?.socket.send(
-          packetFactory.serializePacket(
-            new Packet(PacketType.LOAD_GAME_OBJ, [gameObj.getData()])
-          )
-        );
+    if (collidePlayerGameObject(player, gameObj)) {
+      if (gameObj.isPlayerGameObject()) {
+        if (!player.client?.seenGameObjects.includes(gameObj.id)) {
+          player.client?.socket.send(
+            packetFactory.serializePacket(
+              new Packet(PacketType.LOAD_GAME_OBJ, [gameObj.getData()])
+            )
+          );
 
-        player.client?.seenGameObjects.push(gameObj.id);
+          player.client?.seenGameObjects.push(gameObj.id);
+        }
+
+        if (
+          gameObj.data === ItemType.PitTrap &&
+          gameObj.isEnemy(player, state.tribes)
+        ) {
+          inTrap = true;
+        }
+
+        if (!hasCollision(gameObj.data)) continue;
       }
 
-      if (
-        gameObj.data === ItemType.PitTrap &&
-        gameObj.isEnemy(player, state.tribes)
-      ) {
-        inTrap = true;
-      }
+      let dmg = gameObj.dmg;
 
-      let dmg = getGameObjDamage(gameObj.data);
+      if (dmg) {
+        if (gameObj.isPlayerGameObject() && !gameObj.isEnemy(player, state.tribes)) return;
 
-      if (
-        dmg &&
-        gameObj.isEnemy(player, state.tribes)
-      ) {
         let hat = getHat(player.hatID);
 
         if (hat) {
@@ -88,10 +91,6 @@ function tryMovePlayer(player: Player, delta: number, xVel: number, yVel: number
         )
       }
 
-      if (!hasCollision(gameObj.data)) continue;
-    }
-
-    if (collidePlayerGameObject(player, gameObj)) {
       xVel *= .75;
       yVel *= .75;
 
