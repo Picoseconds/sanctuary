@@ -77,6 +77,15 @@ function tryMovePlayer(player: Player, delta: number, xVel: number, yVel: number
         let angle = Math.atan2(player.location.y - gameObj.location.y, player.location.x - gameObj.location.x);
         player.velocity.add(Math.cos(angle), Math.sin(angle));
         player.health -= dmg;
+
+        state.players.find(player => player.id == gameObj.ownerSID)?.client?.socket.send(
+          packetFactory.serializePacket(
+            new Packet(
+              PacketType.HEALTH_CHANGE,
+              [gameObj.location.x + Math.cos(angle) * (gameObj.realScale + 35), gameObj.location.y + Math.sin(angle) * (gameObj.realScale + 35), dmg, 1]
+            )
+          )
+        )
       }
 
       if (!hasCollision(gameObj.data)) continue;
