@@ -591,6 +591,7 @@ export default class Game {
                 break;
               case GameObjectType.GoldMine:
                 player.points += gather == 1 ? 5 : gather;
+                player.xp += 4 * gather;
                 break;
             }
 
