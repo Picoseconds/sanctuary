@@ -68,9 +68,7 @@ function tryMovePlayer(player: Player, delta: number, xVel: number, yVel: number
 
       let dmg = gameObj.dmg;
 
-      if (dmg) {
-        if (gameObj.isPlayerGameObject() && !gameObj.isEnemy(player, state.tribes)) return;
-
+      if (dmg && !(gameObj.isPlayerGameObject() && !gameObj.isEnemy(player, state.tribes))) {
         let hat = getHat(player.hatID);
 
         if (hat) {
