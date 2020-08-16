@@ -86,7 +86,7 @@ function tryMovePlayer(player: Player, delta: number, xVel: number, yVel: number
               [gameObj.location.x + Math.cos(angle) * (gameObj.realScale + 35), gameObj.location.y + Math.sin(angle) * (gameObj.realScale + 35), dmg, 1]
             )
           )
-        )
+        );
       }
 
       xVel *= .83;
