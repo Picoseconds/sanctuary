@@ -89,8 +89,8 @@ function tryMovePlayer(player: Player, delta: number, xVel: number, yVel: number
         )
       }
 
-      xVel *= .75;
-      yVel *= .75;
+      xVel *= .83;
+      yVel *= .83;
 
       let angle = Math.atan2(newLocation.y - gameObj.location.y, newLocation.x - gameObj.location.x);
 
