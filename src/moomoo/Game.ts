@@ -447,6 +447,8 @@ export default class Game {
       }
 
       if (player.isAttacking && player.selectedWeapon != Weapons.Shield && player.buildItem == -1) {
+        let hat = getHat(player.hatID);
+
         if (Date.now() - player.lastHitTime >= player.getWeaponHitTime()) {
           let nearbyPlayers = player.getNearbyPlayers(this.state);
 
@@ -470,7 +472,6 @@ export default class Game {
               weaponVariant
             );
 
-            let hat = getHat(player.hatID);
             let hitPlayerHat = getHat(hitPlayer.hatID);
 
             if (hat && hat.dmgMultO)
@@ -529,7 +530,6 @@ export default class Game {
           for (let hitGameObject of hitGameObjects) {
             if (hitGameObject.health !== -1) {
               let dmgMult = 1;
-              let hat = getHat(player.hatID);
 
               if (hat && hat.bDmg)
                 dmgMult *= hat.bDmg;
@@ -593,6 +593,9 @@ export default class Game {
                 player.points += gather == 1 ? 5 : gather;
                 break;
             }
+
+            if (hitGameObject.type !== GameObjectType.GoldMine)
+              player.points += (hat?.extraGold || 0) * gather;
 
             player.client?.socket.send(
               packetFactory.serializePacket(
