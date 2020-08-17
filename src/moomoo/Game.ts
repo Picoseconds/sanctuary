@@ -396,6 +396,7 @@ export default class Game {
    * Called as often as possible for things like physics calculations
    */
   update() {
+    const deltaTime = Date.now() - this.lastUpdate;
     let packetFactory = PacketFactory.getInstance();
 
     const TICK_INTERVAL = process.env.TICK_INTERVAL || 0;
@@ -438,7 +439,10 @@ export default class Game {
         );
       }
     });
+
     this.state.players.forEach((player) => {
+      if (player.dead) return;
+
       Physics.movePlayer(player, 33, this.state);
 
       if (Date.now() - player.lastDot >= 1000) {
@@ -612,12 +616,8 @@ export default class Game {
           player.lastHitTime = Date.now();
         }
       }
-    });
 
-    const deltaTime = Date.now() - this.lastUpdate;
-
-    for (let player of this.state.players) {
-      if (player.moveDirection !== null) {
+      if (player.moveDirection !== null && !player.dead) {
         let speedMult = player.location.y > 2400 ? player.spdMult : 0.8 * player.spdMult;
 
         if (player.hatID !== -1) {
@@ -640,7 +640,7 @@ export default class Game {
 
         this.sendGameObjects(player);
       }
-    }
+    });
 
     this.lastUpdate = Date.now();
     setTimeout(this.update, 33);
