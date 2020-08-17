@@ -476,6 +476,20 @@ export default class Game {
               weaponVariant
             );
 
+            let healAmount = hat?.healD || 0 * dmg;
+            player.health += healAmount;
+
+            if (healAmount) {
+              player.client?.socket.send(
+                packetFactory.serializePacket(
+                  new Packet(
+                    PacketType.HEALTH_CHANGE,
+                    [player.location.x, player.location.y, -healAmount, 1]
+                  )
+                )
+              );
+            }
+
             let hitPlayerHat = getHat(hitPlayer.hatID);
 
             if (hat && hat.dmgMultO)
