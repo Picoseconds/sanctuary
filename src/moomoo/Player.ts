@@ -123,7 +123,8 @@ export default class Player extends Entity {
     }
 
     if (this.bleedAmt < this.maxBleedAmt) {
-      this.health -= this.bleedDmg;
+      if (!hat?.poisonRes)
+        this.health -= this.bleedDmg;
       this.bleedAmt++;
     } else {
       this.maxBleedAmt = -1;

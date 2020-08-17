@@ -503,6 +503,10 @@ export default class Game {
               hitPlayer.bleedDmg = 5;
               hitPlayer.bleedAmt = 0;
               hitPlayer.maxBleedAmt = 5;
+            } else if (hat?.poisonDmg) {
+              hitPlayer.bleedDmg = hat.poisonDmg;
+              hitPlayer.bleedAmt = 0;
+              hitPlayer.maxBleedAmt = hat.poisonTime;
             }
 
             if (hitPlayer.health <= 0 && hitPlayer.client && !hitPlayer.invincible) {
