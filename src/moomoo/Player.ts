@@ -427,7 +427,8 @@ export default class Player extends Entity {
         if (
           !(gameObject.isPlayerGameObject() &&
             shouldHideFromEnemy(gameObject.data) &&
-            gameObject.isEnemy(this, state.tribes)) || includeHidden
+            gameObject.isEnemy(this, state.tribes) &&
+            !this.client?.seenGameObjects.includes(gameObject.id)) || includeHidden
         ) {
           gameObjects.push(gameObject);
         }
