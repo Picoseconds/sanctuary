@@ -476,7 +476,7 @@ export default class Game {
               weaponVariant
             );
 
-            let healAmount = hat?.healD || 0 * dmg;
+            let healAmount = (hat?.healD || 0) * dmg;
             player.health += healAmount;
 
             if (healAmount) {
