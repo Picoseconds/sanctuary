@@ -1092,6 +1092,9 @@ export default class Game {
       case PacketType.BUY_AND_EQUIP:
         let isAcc = packet.data[2];
 
+        // TODO: actually implement accessories
+        if (isAcc) return;
+
         if ((!getHat(packet.data[1]) || getHat(packet.data[1])?.dontSell) && packet.data[1] !== 0) {
           this.kickClient(client, "Kicked for hacks");
           return;
