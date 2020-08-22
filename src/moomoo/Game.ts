@@ -62,6 +62,9 @@ export default class Game {
     this.started = true;
     this.lastUpdate = Date.now();
     this.generateStructures();
+
+    setInterval(this.updateWindmills.bind(this), 1000);
+
     process.nextTick(this.update);
   }
 
@@ -806,7 +809,7 @@ export default class Game {
   }
 
   updateWindmills() {
-    for (let windmill of this.state.gameObjects.filter(gameObj => getGroupID(gameObj.data) == 3)) {
+    for (let windmill of this.state.gameObjects.filter(gameObj => gameObj.isPlayerGameObject() && getGroupID(gameObj.data) == 3)) {
       let player = this.state.players.find(player => player.id == windmill.ownerSID);
 
       if (player && !player.dead)
