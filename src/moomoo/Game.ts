@@ -1149,7 +1149,26 @@ export default class Game {
           }
         }
         break;
+      case PacketType.CLAN_KICK:
+        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
+
+        if (client.player) {
+          let tribeIndex = this.state.tribes.findIndex(tribe => tribe.ownerSID == client.player?.id);
+          let tribe = this.state.tribes[tribeIndex];
+
+          if (tribeIndex < 0) this.kickClient(client, "Kicked for hacks");
+          if (!tribe?.membersSIDs.includes(packet.data[0])) this.kickClient(client, "Kicked for hacks");
+
+          let player = this.state.players.find(player => player.id == packet.data[0]);
+          if (!player) this.kickClient(client, "Kicked for hacks");
+
+          if (player)
+            this.state.leaveClan(player, tribeIndex);
+        }
+        break;
       case PacketType.SELECT_UPGRADE:
+        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
+
         if (client.player) {
           let item = packet.data[0] as number;
           let upgrades = getUpgrades(client.player.upgradeAge);
