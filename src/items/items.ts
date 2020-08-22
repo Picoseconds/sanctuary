@@ -38,55 +38,7 @@ const Weapons = {
 type Weapons = PrimaryWeapons | SecondaryWeapons
 
 function getHitTime(weapon: Weapons) {
-  switch (weapon) {
-    case Weapons.ToolHammer:
-      return 450;
-
-    case Weapons.Axe:
-      return 560;
-
-    case Weapons.Bat:
-      return 450;
-
-    case Weapons.Bow:
-      return 785;
-
-    case Weapons.Crossbow:
-      return 900;
-
-    case Weapons.Daggers:
-      return 225;
-
-    case Weapons.GreatHammer:
-      return 560;
-
-    case Weapons.McGrabby:
-      return 900;
-
-    case Weapons.Musket:
-      return 1685;
-
-    case Weapons.Polearm:
-      return 900;
-
-    case Weapons.RepeaterCrossbow:
-      return 450;
-
-    case Weapons.Shield:
-      throw 'Shield does not have a hit time!';
-
-    case Weapons.Stick:
-      return 560;
-
-    case Weapons.Sword:
-      return 450;
-
-    case Weapons.GreatAxe:
-      return 400;
-
-    case Weapons.Katana:
-      return 300;
-  }
+  return weapons[weapon].speed || -1;
 }
 
 function getWeaponAttackDetails(item: Weapons): AttackDetails {

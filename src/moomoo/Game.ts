@@ -398,7 +398,9 @@ export default class Game {
    * Called as often as possible for things like physics calculations
    */
   update() {
-    const deltaTime = Date.now() - this.lastUpdate;
+    const now = Date.now();
+    const deltaTime = now - this.lastUpdate;
+
     let packetFactory = PacketFactory.getInstance();
 
     const TICK_INTERVAL = process.env.TICK_INTERVAL || 0;
@@ -449,14 +451,15 @@ export default class Game {
 
       if (Date.now() - player.lastDot >= 1000) {
         player.damageOverTime();
-        player.lastDot = Date.now();
+        player.lastDot = now;
       }
 
       if (player.isAttacking && player.selectedWeapon != Weapons.Shield && player.buildItem == -1) {
-        if (Date.now() - player.lastHitTime >= player.getWeaponHitTime()) {
+        if (now - player.lastHitTime >= player.getWeaponHitTime() + 120) {
           let hat = getHat(player.hatID);
+          console.log("delta: " + (now - player.lastHitTime));
 
-          player.lastHitTime = Date.now();
+          player.lastHitTime = now;
 
           let nearbyPlayers = player.getNearbyPlayers(this.state);
 
@@ -636,13 +639,13 @@ export default class Game {
                   player.secondaryWeaponExp += gather;
                 break;
               case GameObjectType.GoldMine:
-                player.points += gather == 1 ? 5 : gather;
+                player.points += gather == 1 || player.selectedWeapon == Weapons.McGrabby ? 5 : gather;
                 player.xp += 4 * gather;
 
                 if (player.selectedWeapon == player.weapon)
                   player.primaryWeaponExp += gather == 1 ? 5 : gather;
                 else
-                  player.secondaryWeaponExp += gather == 1 ? 5 : gather;
+                  player.secondaryWeaponExp += gather == 1 || player.selectedWeapon == Weapons.McGrabby ? 5 : gather;
                 break;
             }
 
@@ -1062,9 +1065,15 @@ export default class Game {
             client.player.buildItem = -1;
 
             if (client.player.weapon == packet.data[0]) {
+              if (client.player.selectedWeapon != client.player.weapon)
+                client.player.lastHitTime = 0;
               client.player.selectedWeapon = client.player.weapon;
             } else if (client.player.secondaryWeapon == packet.data[0]) {
+              if (client.player.selectedWeapon != client.player.secondaryWeapon)
+                client.player.lastHitTime = 0;
               client.player.selectedWeapon = client.player.secondaryWeapon;
+            } else {
+              this.kickClient(client, "Kicked for hacks");
             }
           } else {
             let itemCost = getItemCost(packet.data[0]);
