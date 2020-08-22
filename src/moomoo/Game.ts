@@ -822,6 +822,8 @@ export default class Game {
 
     switch (packet.type) {
       case PacketType.SPAWN:
+        if (client.player && !client.player.dead) this.kickClient(client, "Kicked for hacks");
+
         if (
           "name" in packet.data[0] &&
           "moofoll" in packet.data[0] &&
@@ -901,6 +903,8 @@ export default class Game {
         }
         break;
       case PacketType.ATTACK:
+        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
+
         if (client.player) {
           if (packet.data[0]) {
             if (Date.now() - client.lastAttackTime < 1000 / MAX_CPS) {
@@ -919,6 +923,8 @@ export default class Game {
         }
         break;
       case PacketType.PLAYER_MOVE:
+        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
+
         if (packet.data[0] === null) {
           if (client.player) client.player.stopMove();
         } else {
@@ -929,6 +935,8 @@ export default class Game {
         if (client.player) client.player.angle = packet.data[0];
         break;
       case PacketType.CHAT:
+        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
+
         for (let badWord of badWords) {
           if (packet.data[0].includes(badWord))
             packet.data[0] = packet.data[0].replace(new RegExp(`\\b${badWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'g'), "M" + "o".repeat(badWord.length - 1));
@@ -951,6 +959,8 @@ export default class Game {
         }
         break;
       case PacketType.CLAN_CREATE:
+        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
+
         if (client.player) {
           let tribe = this.state.addTribe(packet.data[0], client.player.id);
 
@@ -968,6 +978,8 @@ export default class Game {
         }
         break;
       case PacketType.CLAN_REQ_JOIN:
+        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
+
         if (client.player && client.player.clanName === null) {
           let tribe = this.state.tribes.find(
             (tribe) => tribe.name === packet.data[0]
@@ -990,6 +1002,8 @@ export default class Game {
         }
         break;
       case PacketType.CLAN_ACC_JOIN:
+        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
+
         if (client.tribeJoinQueue.length && client.player && packet.data[1]) {
           let tribe = this.state.tribes.find(
             (tribe) => tribe.ownerSID === client.player?.id
@@ -1009,6 +1023,8 @@ export default class Game {
         client.tribeJoinQueue.splice(0, 1);
         break;
       case PacketType.AUTO_ATK:
+        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
+
         if (client.player)
           if (packet.data[0] == 1)
             client.player.autoAttackOn = !client.player.autoAttackOn;
@@ -1040,6 +1056,8 @@ export default class Game {
         }
         break;
       case PacketType.SELECT_ITEM:
+        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
+
         if (client.player) {
           let isWeapon = packet.data[1];
 
@@ -1081,6 +1099,8 @@ export default class Game {
         }
         break;
       case PacketType.LEAVE_CLAN:
+        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
+
         if (client.player) {
           let tribeIndex = this.state.tribes.findIndex(tribe => tribe.membersSIDs.includes(client.player?.id as number));
           let tribe = this.state.tribes[tribeIndex];
@@ -1094,6 +1114,8 @@ export default class Game {
         }
         break;
       case PacketType.BUY_AND_EQUIP:
+        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
+
         let isAcc = packet.data[2];
 
         // TODO: actually implement accessories
