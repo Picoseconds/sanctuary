@@ -155,8 +155,26 @@ dispatcher.register(
     }
 
     return 0;
-  })
-  )
+  }))
+);
+
+dispatcher.register(
+  literal("login").then(argument("password", string()).executes((context) => {
+    let thisPlayer = context.getSource() as Player;
+    let game = getGame();
+
+    if (game) {
+      if (thisPlayer && thisPlayer.client) {
+        if (!process.env.MODERATOR_PASSWORD) return 1;
+        if (context.getArgument("password", String) == process.env.MODERATOR_PASSWORD) {
+          // temporary admin
+          thisPlayer.client.admin = true;
+        }
+      }
+    }
+
+    return 0;
+  }))
 );
 
 dispatcher.register(
