@@ -962,6 +962,8 @@ export default class Game {
                 new Packet(PacketType.PLAYER_SET_CLAN, [tribe.name, true])
               )
             );
+
+            this.state.updateClanPlayers(tribe);
           }
         }
         break;
@@ -983,6 +985,8 @@ export default class Game {
               )
             )
           }
+        } else {
+          this.kickClient(client, "Kicked for hacks")
         }
         break;
       case PacketType.CLAN_ACC_JOIN:
