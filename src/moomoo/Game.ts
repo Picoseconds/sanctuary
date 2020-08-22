@@ -453,9 +453,11 @@ export default class Game {
       }
 
       if (player.isAttacking && player.selectedWeapon != Weapons.Shield && player.buildItem == -1) {
-        let hat = getHat(player.hatID);
-
         if (Date.now() - player.lastHitTime >= player.getWeaponHitTime()) {
+          let hat = getHat(player.hatID);
+
+          player.lastHitTime = Date.now();
+
           let nearbyPlayers = player.getNearbyPlayers(this.state);
 
           let hitPlayers = Physics.checkAttack(
@@ -658,7 +660,6 @@ export default class Game {
           }
 
           this.gatherAnim(player, hitGameObjects.length > 0);
-          player.lastHitTime = Date.now();
         }
       }
 
@@ -907,8 +908,6 @@ export default class Game {
         }
         break;
       case PacketType.ATTACK:
-        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
-
         if (client.player) {
           if (packet.data[0]) {
             if (Date.now() - client.lastAttackTime < 1000 / MAX_CPS) {
@@ -927,8 +926,6 @@ export default class Game {
         }
         break;
       case PacketType.PLAYER_MOVE:
-        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
-
         if (packet.data[0] === null) {
           if (client.player) client.player.stopMove();
         } else {
@@ -1027,8 +1024,6 @@ export default class Game {
         client.tribeJoinQueue.splice(0, 1);
         break;
       case PacketType.AUTO_ATK:
-        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
-
         if (client.player)
           if (packet.data[0] == 1)
             client.player.autoAttackOn = !client.player.autoAttackOn;
@@ -1060,8 +1055,6 @@ export default class Game {
         }
         break;
       case PacketType.SELECT_ITEM:
-        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
-
         if (client.player) {
           let isWeapon = packet.data[1];
 
