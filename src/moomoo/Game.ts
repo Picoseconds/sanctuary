@@ -245,7 +245,7 @@ export default class Game {
 
   async addModerator(client: Client) {
     client.admin = !0;
-    this.updatePlayerChar(client);
+    this.promoteClient(client);
     if (this.db) {
       if (!this.db.get("moderatorIPs").includes(client.ip).value()) {
         await this.db.get("moderatorIPs").push(client.ip).write();
@@ -755,7 +755,8 @@ export default class Game {
       );
     }
   }
-  updatePlayerChar(client: Client) {
+
+  promoteClient(client: Client) {
     if (!client.player) return;
     let packetFactory = PacketFactory.getInstance();
     client.socket.send(
