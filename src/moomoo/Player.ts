@@ -58,8 +58,37 @@ export default class Player extends Entity {
   public weapon: PrimaryWeapons = 0;
   public secondaryWeapon: SecondaryWeapons = -1;
   public selectedWeapon: Weapons = 0;
+
+  private _primaryWeaponExp = 0;
+  private _secondaryWeaponExp = 0;
+
+  public get primaryWeaponExp() {
+    return this._primaryWeaponExp;
+  }
+
+  public get secondaryWeaponExp() {
+    return this._secondaryWeaponExp;
+  }
+
+  public set primaryWeaponExp(value) {
+    if (value >= 12000) this.primaryWeaponVariant = WeaponVariant.Ruby;
+    else if (value >= 7000) this.primaryWeaponVariant = WeaponVariant.Diamond;
+    else if (value >= 3000) this.primaryWeaponVariant = WeaponVariant.Gold;
+
+    this._primaryWeaponExp = value;
+  }
+
+  public set secondaryWeaponExp(value) {
+    if (value >= 12000) this.secondaryWeaponVariant = WeaponVariant.Ruby;
+    else if (value >= 7000) this.secondaryWeaponVariant = WeaponVariant.Diamond;
+    else if (value >= 3000) this.secondaryWeaponVariant = WeaponVariant.Gold;
+
+    this._secondaryWeaponExp = value;
+  }
+
   public primaryWeaponVariant = WeaponVariant.Normal;
   public secondaryWeaponVariant = WeaponVariant.Normal;
+
   public buildItem = -1;
   public items: ItemType[] = [ItemType.Apple, ItemType.WoodWall, ItemType.Spikes, ItemType.Windmill];
 

@@ -574,6 +574,11 @@ export default class Game {
                       player.stone += cost[1] as number;
                       break;
                   }
+
+                  if (player.selectedWeapon == player.weapon)
+                    player.primaryWeaponExp += cost[1] as number;
+                  else
+                    player.secondaryWeaponExp += cost[1] as number;
                 }
 
                 this.state.removeGameObject(hitGameObject);
@@ -602,18 +607,38 @@ export default class Game {
               case GameObjectType.Bush:
                 player.food += gather;
                 player.xp += 4 * gather;
+
+                if (player.selectedWeapon == player.weapon)
+                  player.primaryWeaponExp += gather;
+                else
+                  player.secondaryWeaponExp += gather;
                 break;
               case GameObjectType.Mine:
                 player.stone += gather;
                 player.xp += 4 * gather;
+
+                if (player.selectedWeapon == player.weapon)
+                  player.primaryWeaponExp += gather;
+                else
+                  player.secondaryWeaponExp += gather;
                 break;
               case GameObjectType.Tree:
                 player.wood += gather;
                 player.xp += 4 * gather;
+
+                if (player.selectedWeapon == player.weapon)
+                  player.primaryWeaponExp += gather;
+                else
+                  player.secondaryWeaponExp += gather;
                 break;
               case GameObjectType.GoldMine:
                 player.points += gather == 1 ? 5 : gather;
                 player.xp += 4 * gather;
+
+                if (player.selectedWeapon == player.weapon)
+                  player.primaryWeaponExp += gather == 1 ? 5 : gather;
+                else
+                  player.secondaryWeaponExp += gather == 1 ? 5 : gather;
                 break;
             }
 
@@ -1132,10 +1157,14 @@ export default class Game {
                 if (client.player.selectedWeapon == client.player.weapon)
                   client.player.selectedWeapon = item;
                 client.player.weapon = item;
+                client.player.primaryWeaponVariant = WeaponVariant.Normal;
+                client.player.primaryWeaponExp = 0;
               } else {
                 if (client.player.selectedWeapon == client.player.secondaryWeapon)
                   client.player.selectedWeapon = item;
                 client.player.secondaryWeapon = item;
+                client.player.secondaryWeaponVariant = WeaponVariant.Normal;
+                client.player.secondaryWeaponExp = 0;
               }
             } else {
               this.kickClient(client, "Kicked for hacks");
@@ -1194,6 +1223,8 @@ export default class Game {
               )
             );
           }
+        } else {
+          this.kickClient(client, "Kicked for hacks");
         }
         break;
     }
