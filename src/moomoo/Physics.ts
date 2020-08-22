@@ -38,6 +38,8 @@ function tryMovePlayer(player: Player, delta: number, xVel: number, yVel: number
   let inTrap = false;
   let packetFactory = PacketFactory.getInstance();
 
+  (player.spikeHit > 0 && --player.spikeHit < 0) && (player.spikeHit = 0);
+
   let newLocation = new Vec2(
     player.location.x,
     player.location.y
@@ -68,7 +70,9 @@ function tryMovePlayer(player: Player, delta: number, xVel: number, yVel: number
 
       let dmg = gameObj.dmg;
 
-      if (dmg && !(gameObj.isPlayerGameObject() && !gameObj.isEnemy(player, state.tribes))) {
+      if (dmg && !(gameObj.isPlayerGameObject() && !gameObj.isEnemy(player, state.tribes)) && !player.spikeHit) {
+        player.spikeHit = 2;
+
         let hat = getHat(player.hatID);
 
         if (hat) {

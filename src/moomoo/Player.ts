@@ -53,6 +53,8 @@ export default class Player extends Entity {
   public bleedAmt = 0;
   public maxBleedAmt = -1;
 
+  public spikeHit = 0;
+
   public weapon: PrimaryWeapons = 0;
   public secondaryWeapon: SecondaryWeapons = -1;
   public selectedWeapon: Weapons = 0;
