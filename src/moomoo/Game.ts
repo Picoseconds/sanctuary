@@ -756,7 +756,7 @@ export default class Game {
     }
   }
   updatePlayerChar(client: Client) {
-    if (!client.player) return console.log('no clientplayer thing error fix this aaaaaaaaaaaaaaaaaaaaa');
+    if (!client.player) return;
     let packetFactory = PacketFactory.getInstance();
     client.socket.send(
       packetFactory.serializePacket(
