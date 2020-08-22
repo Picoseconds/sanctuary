@@ -146,6 +146,10 @@ function hasCollision(item: ItemType) {
   return !items[item].ignoreCollision;
 }
 
+function getPPS(item: ItemType) {
+  return items[item].pps || 0;
+}
+
 function getWeaponSpeedMultiplier(weapon: Weapons) {
   return weapons[weapon].spdMult || 1;
 }
@@ -200,5 +204,6 @@ export {
   getGameObjHealth,
   getGameObjDamage,
   getGameObjPlaceLimit,
-  shouldHideFromEnemy
+  shouldHideFromEnemy,
+  getPPS
 };

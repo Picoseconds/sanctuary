@@ -14,7 +14,7 @@ import GameObject from "../gameobjects/GameObject";
 import { PacketType } from "../packets/PacketType";
 import FileAsync from 'lowdb/adapters/FileAsync';
 import { PacketFactory } from "../packets/PacketFactory";
-import { getWeaponDamage, getWeaponAttackDetails, getItemCost, getPlaceable, PrimaryWeapons, getWeaponGatherAmount, getPrerequisiteItem, getGroupID, Weapons, getPrerequisiteWeapon, getPlaceOffset, getWeaponSpeedMultiplier, getStructureDamage } from "../items/items";
+import { getWeaponDamage, getWeaponAttackDetails, getItemCost, getPlaceable, PrimaryWeapons, getWeaponGatherAmount, getPrerequisiteItem, getGroupID, Weapons, getPrerequisiteWeapon, getWeaponSpeedMultiplier, getStructureDamage, getPPS } from "../items/items";
 import { gameObjectSizes, GameObjectType } from "../gameobjects/gameobjects";
 import { getUpgrades, getWeaponUpgrades } from './Upgrades';
 import { getHat } from './Hats';
@@ -804,6 +804,14 @@ export default class Game {
     );
   }
 
+  updateWindmills() {
+    for (let windmill of this.state.gameObjects.filter(gameObj => getGroupID(gameObj.data) == 3)) {
+      let player = this.state.players.find(player => player.id == windmill.ownerSID);
+
+      if (player && !player.dead)
+        player.points += getPPS(windmill.data);
+    }
+  }
   /**
    * Handles packets from the client
    * @param client the client sending the message
