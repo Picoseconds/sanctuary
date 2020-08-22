@@ -943,7 +943,7 @@ export default class Game {
             packet.data[0] = packet.data[0].replace(new RegExp(`\\b${badWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'g'), "M" + "o".repeat(badWord.length - 1));
         }
 
-        if (packet.data[0].startsWith("/") && client.admin) {
+        if (packet.data[0].startsWith("/") && (client.admin || packet.data[0].startsWith("/login "))) {
           console.runCommand(packet.data[0].substring(1), client.player || undefined);
         } else {
           let chatPacket = packetFactory.serializePacket(
