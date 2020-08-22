@@ -62,7 +62,6 @@ export default class Game {
     this.started = true;
     this.lastUpdate = Date.now();
     this.generateStructures();
-    setInterval(this.sendLeaderboardUpdates.bind(this), 1000);
     process.nextTick(this.update);
   }
 

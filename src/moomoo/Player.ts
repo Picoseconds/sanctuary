@@ -263,6 +263,7 @@ export default class Player extends Entity {
       )
     );
     this._points = newPoints;
+    this.game.sendLeaderboardUpdates();
   }
 
   private _wood: number = 0;
