@@ -16,7 +16,6 @@ import {
   getPlaceable,
   getScale,
   getPlaceOffset,
-  getGameObjID,
   getGameObjHealth,
   getGameObjPlaceLimit,
   getGroupID,

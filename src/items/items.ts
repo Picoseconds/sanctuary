@@ -142,15 +142,6 @@ function getScale(item: ItemType) {
   return items[item].scale;
 }
 
-function getGameObjID(item: ItemType) {
-  switch (item) {
-    case ItemType.WoodWall:
-      return 3;
-  }
-
-  return 0;
-}
-
 function hasCollision(item: ItemType) {
   return !items[item].ignoreCollision;
 }
@@ -199,7 +190,6 @@ export {
   getPlaceable,
   getPlaceOffset,
   getScale,
-  getGameObjID,
   getWeaponGatherAmount,
   getPrerequisiteItem,
   getGroupID,
