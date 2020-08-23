@@ -301,7 +301,7 @@ export default class Player extends Entity {
       this._health = newHealth;
 
       if (this._health <= 0 && !this.dead) {
-        this.die();
+        this.game.killPlayer(this);
       }
     }
   }

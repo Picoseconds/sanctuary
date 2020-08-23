@@ -270,6 +270,8 @@ export default class Game {
         )
       );
     }
+
+    this.sendLeaderboardUpdates();
   }
 
   makePlayerUpdateForClient(client: Client) {
@@ -855,8 +857,6 @@ export default class Game {
               newPlayer = player;
             }
 
-            this.sendLeaderboardUpdates();
-
             newPlayer.location = randomPos(14400, 14400);
             newPlayer.name =
               packet.data[0].name > 15 || packet.data[0].name === ""
@@ -876,6 +876,8 @@ export default class Game {
                 new Packet(PacketType.PLAYER_START, [newPlayer.id])
               )
             );
+
+            this.sendLeaderboardUpdates();
 
             client.socket.send(
               packetFactory.serializePacket(
