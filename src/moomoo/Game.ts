@@ -19,6 +19,7 @@ import { gameObjectSizes, GameObjectType } from "../gameobjects/gameobjects";
 import { getUpgrades, getWeaponUpgrades } from './Upgrades';
 import { getHat } from './Hats';
 import { WeaponVariant } from './Weapons';
+import { ItemType } from '../items/UpgradeItems';
 
 let currentGame: Game | null = null;
 
@@ -650,6 +651,29 @@ export default class Game {
                   player.secondaryWeaponExp += gather == 1 || player.selectedWeapon == Weapons.McGrabby ? 5 : gather;
                 break;
             }
+
+            if (hitGameObject.isPlayerGameObject()) {
+            switch (hitGameObject.data) {
+              case ItemType.Sapling:
+                player.wood += gather;
+                player.xp += 4 * gather;
+
+                if (player.selectedWeapon == player.weapon)
+                  player.primaryWeaponExp += gather;
+                else
+                  player.secondaryWeaponExp += gather;
+                break;
+              case ItemType.Mine:
+                player.stone += gather;
+                player.xp += 4 * gather;
+
+                if (player.selectedWeapon == player.weapon)
+                  player.primaryWeaponExp += gather;
+                else
+                  player.secondaryWeaponExp += gather;
+                break;
+            }
+          }
 
             if (hitGameObject.type !== GameObjectType.GoldMine)
               player.points += (hat?.extraGold || 0) * gather;
