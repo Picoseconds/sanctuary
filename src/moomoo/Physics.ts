@@ -156,7 +156,7 @@ function checkAttack(player: Player, players: Player[]) {
 }
 
 function collideGameObjects(gameObject1: GameObject, gameObject2: GameObject) {
-  return collideCircles(gameObject1.location, gameObject1.realScale * 0.9, gameObject2.location, gameObject1.realScale);
+  return collideCircles(gameObject1.location, gameObject1.realScale * 0.9, gameObject2.location, gameObject2.realScale);
 }
 
 function checkAttackGameObj(player: Player, gameObjects: GameObject[]) {
