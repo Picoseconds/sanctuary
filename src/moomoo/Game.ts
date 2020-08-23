@@ -460,7 +460,6 @@ export default class Game {
       if (player.isAttacking && player.selectedWeapon != Weapons.Shield && player.buildItem == -1) {
         if (now - player.lastHitTime >= player.getWeaponHitTime() + 120) {
           let hat = getHat(player.hatID);
-          console.log("delta: " + (now - player.lastHitTime));
 
           player.lastHitTime = now;
 
