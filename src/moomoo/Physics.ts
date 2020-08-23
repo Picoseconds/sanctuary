@@ -5,6 +5,9 @@ import { getWeaponAttackDetails, hasCollision, getGameObjDamage } from "../items
 import GameState from "./GameState";
 import { ItemType } from "../items/UpgradeItems";
 import { getHat } from "./Hats";
+import { PacketType } from "../packets/PacketType";
+import { Packet } from "../packets/Packet";
+import { PacketFactory } from "../packets/PacketFactory";
 
 function collideCircles(pos1: Vec2, r1: number, pos2: Vec2, r2: number) {
   return pos1.distance(pos2) <= r1 + r2;
@@ -28,26 +31,33 @@ function moveTowards(player: Player, angle: number, speed: number, deltaTime: nu
  * @param gameObj the GameObject to test collision for
  */
 function collidePlayerGameObject(player: Player, gameObj: GameObject) {
-  return collideCircles(player.location, 35, gameObj.location, gameObj.realScale);
+  return collideCircles(player.location, 35, gameObj.location, gameObj.data === ItemType.PitTrap ? 0.3 * gameObj.realScale : gameObj.realScale);
 }
 
-function tryMovePlayer(
-  player: Player,
-  delta: number,
-  xVel: number,
-  yVel: number,
-  state: GameState
-) {
+function tryMovePlayer(player: Player, delta: number, xVel: number, yVel: number, state: GameState) {
   let inTrap = false;
+  let packetFactory = PacketFactory.getInstance();
 
-  let newLocation = new Vec2(player.location.x, player.location.y);
+  (player.spikeHit > 0 && --player.spikeHit < 0) && (player.spikeHit = 0);
 
-  for (let gameObj of player.getNearbyGameObjects(state)) {
-    if (
-      gameObj.isPlayerGameObject() &&
-      collidePlayerGameObject(player, gameObj)
-    ) {
-      switch (gameObj.data) {
+  let newLocation = new Vec2(
+    player.location.x,
+    player.location.y
+  );
+
+  for (let gameObj of player.getNearbyGameObjects(state, true)) {
+    if (collidePlayerGameObject(player, gameObj)) {
+      if (gameObj.isPlayerGameObject()) {
+        if (!player.client?.seenGameObjects.includes(gameObj.id)) {
+          player.client?.socket.send(
+            packetFactory.serializePacket(
+              new Packet(PacketType.LOAD_GAME_OBJ, [gameObj.getData()])
+            )
+          );
+
+          player.client?.seenGameObjects.push(gameObj.id);
+        }
+     switch (gameObj.data) {
         case ItemType.PitTrap:
           gameObj.isEnemy(player, state.tribes) && (inTrap = !0);
           break;
@@ -58,35 +68,38 @@ function tryMovePlayer(
           );
           break;
       }
+        if (!hasCollision(gameObj.data)) continue;
+      }
 
-      let dmg = getGameObjDamage(gameObj.data);
+      let dmg = gameObj.dmg;
 
-      if (dmg && gameObj.isEnemy(player, state.tribes)) {
+      if (dmg && !(gameObj.isPlayerGameObject() && !gameObj.isEnemy(player, state.tribes)) && !player.spikeHit) {
+        player.spikeHit = 2;
+
         let hat = getHat(player.hatID);
 
         if (hat) {
           dmg *= hat.dmgMult || 1;
         }
 
-        let angle = Math.atan2(
-          player.location.y - gameObj.location.y,
-          player.location.x - gameObj.location.x
-        );
+        let angle = Math.atan2(player.location.y - gameObj.location.y, player.location.x - gameObj.location.x);
         player.velocity.add(Math.cos(angle), Math.sin(angle));
         player.health -= dmg;
+
+        state.players.find(player => player.id == gameObj.ownerSID)?.client?.socket.send(
+          packetFactory.serializePacket(
+            new Packet(
+              PacketType.HEALTH_CHANGE,
+              [gameObj.location.x + Math.cos(angle) * (gameObj.realScale + 35), gameObj.location.y + Math.sin(angle) * (gameObj.realScale + 35), dmg, 1]
+            )
+          )
+        );
       }
 
-      if (!hasCollision(gameObj.data)) continue;
-    }
+      xVel *= .83;
+      yVel *= .83;
 
-    if (collidePlayerGameObject(player, gameObj)) {
-      xVel *= 0.75;
-      yVel *= 0.75;
-
-      let angle = Math.atan2(
-        newLocation.y - gameObj.location.y,
-        newLocation.x - gameObj.location.x
-      );
+      let angle = Math.atan2(newLocation.y - gameObj.location.y, newLocation.x - gameObj.location.x);
 
       newLocation = new Vec2(
         gameObj.location.x + Math.cos(angle) * (gameObj.realScale + 35),
@@ -102,11 +115,22 @@ function tryMovePlayer(
   player.location = newLocation.add(delta * xVel, delta * yVel);
 }
 
-
 function movePlayer(player: Player, delta: number, state: GameState) {
+  tryMovePlayer(player, delta, player.velocity.x, player.velocity.y, state);
+
   if (player.velocity.x || player.velocity.y) {
-    tryMovePlayer(player, delta, player.velocity.x, player.velocity.y, state);
     player.velocity = player.velocity.multiply(0.993 ** delta, 0.993 ** delta);
+  }
+  for (let p of player.getNearbyPlayers(state)) {
+    if (collideCircles(p.location, 30, player.location, 30)) {
+      let dis = player.location.distance(p.location);
+      let angle = Math.atan2(p.location.y - player.location.y, p.location.x - player.location.x);
+      let distanceToMove = (30 + 30) - dis;
+      p.location.add(Math.cos(angle) * distanceToMove, Math.sin(angle) * distanceToMove);
+      player.location.add(-Math.cos(angle) * distanceToMove, -Math.sin(angle) * distanceToMove);
+      tryMovePlayer(p, delta, p.velocity.x, p.velocity.y, state);
+      tryMovePlayer(player, delta, player.velocity.x, player.velocity.y, state);
+    }
   }
 }
 
@@ -135,7 +159,7 @@ function checkAttack(player: Player, players: Player[]) {
 }
 
 function collideGameObjects(gameObject1: GameObject, gameObject2: GameObject) {
-  return collideCircles(gameObject1.location, gameObject1.realScale * 0.9, gameObject2.location, gameObject1.realScale);
+  return collideCircles(gameObject1.location, gameObject1.realScale * 0.9, gameObject2.location, gameObject2.realScale);
 }
 
 function checkAttackGameObj(player: Player, gameObjects: GameObject[]) {

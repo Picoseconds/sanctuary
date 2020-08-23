@@ -16,8 +16,11 @@ import {
   getPlaceable,
   getScale,
   getPlaceOffset,
-  getGameObjID,
-  getGameObjHealth
+  getGameObjHealth,
+  getGameObjPlaceLimit,
+  getGroupID,
+  shouldHideFromEnemy,
+  getGameObjDamage
 } from "../items/items";
 import { ItemType } from "../items/UpgradeItems";
 import GameObject from "../gameobjects/GameObject";
@@ -40,6 +43,7 @@ export default class Player extends Entity {
   public spdMult: number = 1;
 
   public upgradeAge = 2;
+  public invincible = false;
 
   public foodHealOverTime = 0;
   public foodHealOverTimeAmt = 0;
@@ -49,11 +53,42 @@ export default class Player extends Entity {
   public bleedAmt = 0;
   public maxBleedAmt = -1;
 
+  public spikeHit = 0;
+
   public weapon: PrimaryWeapons = 0;
   public secondaryWeapon: SecondaryWeapons = -1;
   public selectedWeapon: Weapons = 0;
+
+  private _primaryWeaponExp = 0;
+  private _secondaryWeaponExp = 0;
+
+  public get primaryWeaponExp() {
+    return this._primaryWeaponExp;
+  }
+
+  public get secondaryWeaponExp() {
+    return this._secondaryWeaponExp;
+  }
+
+  public set primaryWeaponExp(value) {
+    if (value >= 12000) this.primaryWeaponVariant = WeaponVariant.Ruby;
+    else if (value >= 7000) this.primaryWeaponVariant = WeaponVariant.Diamond;
+    else if (value >= 3000) this.primaryWeaponVariant = WeaponVariant.Gold;
+
+    this._primaryWeaponExp = value;
+  }
+
+  public set secondaryWeaponExp(value) {
+    if (value >= 12000) this.secondaryWeaponVariant = WeaponVariant.Ruby;
+    else if (value >= 7000) this.secondaryWeaponVariant = WeaponVariant.Diamond;
+    else if (value >= 3000) this.secondaryWeaponVariant = WeaponVariant.Gold;
+
+    this._secondaryWeaponExp = value;
+  }
+
   public primaryWeaponVariant = WeaponVariant.Normal;
   public secondaryWeaponVariant = WeaponVariant.Normal;
+
   public buildItem = -1;
   public items: ItemType[] = [ItemType.Apple, ItemType.WoodWall, ItemType.Spikes, ItemType.Windmill];
 
@@ -118,7 +153,8 @@ export default class Player extends Entity {
     }
 
     if (this.bleedAmt < this.maxBleedAmt) {
-      this.health -= this.bleedDmg;
+      if (!hat?.poisonRes)
+        this.health -= this.bleedDmg;
       this.bleedAmt++;
     } else {
       this.maxBleedAmt = -1;
@@ -227,6 +263,7 @@ export default class Player extends Entity {
       )
     );
     this._points = newPoints;
+    this.game.sendLeaderboardUpdates();
   }
 
   private _wood: number = 0;
@@ -250,7 +287,7 @@ export default class Player extends Entity {
   }
 
   public set health(newHealth: number) {
-    if (!this.client?.admin) {
+    if (!this.invincible) {
       let packetFactory = PacketFactory.getInstance();
 
       for (let client of this.game.clients) {
@@ -264,7 +301,7 @@ export default class Player extends Entity {
       this._health = newHealth;
 
       if (this._health <= 0 && !this.dead) {
-        this.die();
+        this.game.killPlayer(this);
       }
     }
   }
@@ -296,13 +333,19 @@ export default class Player extends Entity {
   }
 
   public getWeaponHitTime() {
-    return getHitTime(this.selectedWeapon);
+    let base = getHitTime(this.selectedWeapon);
+    let hat = getHat(this.hatID);
+    return base * (hat?.atkSpd || 1);
   }
 
   public useItem(item: ItemType, gameState?: GameState, gameObjectID?: number) {
     let packetFactory = PacketFactory.getInstance();
 
     if (getPlaceable(item) && gameState && gameObjectID) {
+      let placeLimit = getGameObjPlaceLimit(item);
+      let placedAmount = gameState.gameObjects.filter(gameObj => gameObj.data === item && gameObj.ownerSID == this.id).length
+      if (placedAmount >= placeLimit) return;
+
       let offset = 35 + getScale(item) + (getPlaceOffset(item) || 0);
       let location = this.location.add(offset * Math.cos(this.angle), offset * Math.sin(this.angle), true);
 
@@ -312,10 +355,11 @@ export default class Player extends Entity {
         this.angle,
         getScale(item),
         -1,
-        item === ItemType.PitTrap ? 0.3 * getScale(item) : undefined,
+        undefined,
         item,
         this.id,
-        getGameObjHealth(item)
+        getGameObjHealth(item),
+        getGameObjDamage(item)
       );
 
       for (let gameObject of gameState.gameObjects) {
@@ -324,6 +368,14 @@ export default class Player extends Entity {
       }
 
       gameState?.gameObjects.push(newGameObject);
+      this.client?.socket.send(
+        packetFactory.serializePacket(
+          new Packet(
+            PacketType.UPDATE_PLACE_LIMIT,
+            [getGroupID(item), placedAmount + 1]
+          )
+        )
+      );
 
       return true;
     }
@@ -391,7 +443,7 @@ export default class Player extends Entity {
     }
   }
 
-  public getNearbyGameObjects(state: GameState) {
+  public getNearbyGameObjects(state: GameState, includeHidden = false) {
     const RADIUS = process.env.GAMEOBJECT_NEARBY_RADIUS || 1250;
 
     let gameObjects = [];
@@ -403,7 +455,14 @@ export default class Player extends Entity {
           [gameObject.location.x, gameObject.location.y]
         ) < RADIUS
       ) {
-        gameObjects.push(gameObject);
+        if (
+          !(gameObject.isPlayerGameObject() &&
+            shouldHideFromEnemy(gameObject.data) &&
+            gameObject.isEnemy(this, state.tribes) &&
+            !this.client?.seenGameObjects.includes(gameObject.id)) || includeHidden
+        ) {
+          gameObjects.push(gameObject);
+        }
       }
     }
 

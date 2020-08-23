@@ -38,55 +38,7 @@ const Weapons = {
 type Weapons = PrimaryWeapons | SecondaryWeapons
 
 function getHitTime(weapon: Weapons) {
-  switch (weapon) {
-    case Weapons.ToolHammer:
-      return 450;
-
-    case Weapons.Axe:
-      return 560;
-
-    case Weapons.Bat:
-      return 450;
-
-    case Weapons.Bow:
-      return 785;
-
-    case Weapons.Crossbow:
-      return 900;
-
-    case Weapons.Daggers:
-      return 225;
-
-    case Weapons.GreatHammer:
-      return 560;
-
-    case Weapons.McGrabby:
-      return 900;
-
-    case Weapons.Musket:
-      return 1685;
-
-    case Weapons.Polearm:
-      return 900;
-
-    case Weapons.RepeaterCrossbow:
-      return 450;
-
-    case Weapons.Shield:
-      throw 'Shield does not have a hit time!';
-
-    case Weapons.Stick:
-      return 560;
-
-    case Weapons.Sword:
-      return 450;
-
-    case Weapons.GreatAxe:
-      return 400;
-
-    case Weapons.Katana:
-      return 300;
-  }
+  return weapons[weapon].speed || -1;
 }
 
 function getWeaponAttackDetails(item: Weapons): AttackDetails {
@@ -142,17 +94,12 @@ function getScale(item: ItemType) {
   return items[item].scale;
 }
 
-function getGameObjID(item: ItemType) {
-  switch (item) {
-    case ItemType.WoodWall:
-      return 3;
-  }
-
-  return 0;
+function hasCollision(item: ItemType) {
+  return !items[item].ignoreCollision;
 }
 
-function hasCollision(item: ItemType) {
-  return items[item].group.layer >= 0;
+function getPPS(item: ItemType) {
+  return items[item].pps || 0;
 }
 
 function getWeaponSpeedMultiplier(weapon: Weapons) {
@@ -180,6 +127,14 @@ function getGameObjDamage(item: ItemType) {
   return items[item].dmg || 0;
 }
 
+function getGameObjPlaceLimit(item: ItemType) {
+  return items[item].group.limit || Infinity;
+}
+
+function shouldHideFromEnemy(item: ItemType) {
+  return !!items[item].hideFromEnemy;
+}
+
 export {
   PrimaryWeapons,
   SecondaryWeapons,
@@ -191,7 +146,6 @@ export {
   getPlaceable,
   getPlaceOffset,
   getScale,
-  getGameObjID,
   getWeaponGatherAmount,
   getPrerequisiteItem,
   getGroupID,
@@ -200,5 +154,8 @@ export {
   hasCollision,
   getStructureDamage,
   getGameObjHealth,
-  getGameObjDamage
+  getGameObjDamage,
+  getGameObjPlaceLimit,
+  shouldHideFromEnemy,
+  getPPS
 };

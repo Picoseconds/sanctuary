@@ -3,6 +3,7 @@ import Player from "./Player";
 
 export default class Client {
   public tribeJoinQueue: Player[] = [];
+  public lastAttackTime = 0;
 
   constructor(
     public id: string,
@@ -13,8 +14,6 @@ export default class Client {
     public player: Player | null = null,
     public ownedHats: number[] = [],
     public ownedAccs: number[] = [],
-    public lastPacket: number = 0,
-    public packets: number = 0,
     public admin: boolean = false
   ) {}
 }

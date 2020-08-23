@@ -48,7 +48,8 @@ enum PacketType {
   CLAN_NOTIFY_CLIENT,
   HEALTH_CHANGE,
   JOIN_REQUEST,
-  REMOVE_GAME_OBJ
+  REMOVE_GAME_OBJ,
+  UPDATE_PLACE_LIMIT
 }
 
 export { PacketType };

@@ -12,6 +12,7 @@ import {
   argument,
 } from "node-brigadier";
 import Player from "./moomoo/Player";
+import { WeaponVariant } from "./moomoo/Weapons";
 
 let command = "";
 let lastMessage = "";
@@ -128,6 +129,21 @@ dispatcher.register(
 );
 
 dispatcher.register(
+  literal("invincible").executes((context) => {
+    let thisPlayer = context.getSource() as Player;
+    let game = getGame();
+
+    if (game) {
+      if (thisPlayer) {
+        thisPlayer.invincible = !thisPlayer.invincible;
+      }
+    }
+
+    return 0;
+  })
+);
+
+dispatcher.register(
   literal("speed").then(argument("speedMultiplier", integer()).executes((context) => {
     let thisPlayer = context.getSource() as Player;
     let game = getGame();
@@ -139,7 +155,103 @@ dispatcher.register(
     }
 
     return 0;
-  })
+  }))
+);
+
+dispatcher.register(
+  literal("login").then(argument("password", string()).executes((context) => {
+    let thisPlayer = context.getSource() as Player;
+    let game = getGame();
+
+    if (game) {
+      if (thisPlayer && thisPlayer.client) {
+        if (!process.env.MODERATOR_PASSWORD) return 1;
+        if (context.getArgument("password", String) == process.env.MODERATOR_PASSWORD) {
+          // temporary admin
+          thisPlayer.client.admin = true;
+        }
+      }
+    }
+
+    return 0;
+  }))
+);
+
+dispatcher.register(
+  literal("weaponVariant").then(
+    argument("variant", string()).executes(
+      (context) => {
+        let thisPlayer = context.getSource() as Player;
+        let game = getGame();
+        let variant = context.getArgument("variant", String);
+
+        if (game) {
+          if (thisPlayer) {
+            switch (variant) {
+              case "ruby":
+                thisPlayer.selectedWeapon === thisPlayer.weapon ? thisPlayer.primaryWeaponVariant = WeaponVariant.Ruby : thisPlayer.secondaryWeaponVariant = WeaponVariant.Ruby;
+                break;
+
+              case "diamond":
+                thisPlayer.selectedWeapon === thisPlayer.weapon ? thisPlayer.primaryWeaponVariant = WeaponVariant.Diamond : thisPlayer.secondaryWeaponVariant = WeaponVariant.Diamond;
+                break;
+
+              case "gold":
+                thisPlayer.selectedWeapon === thisPlayer.weapon ? thisPlayer.primaryWeaponVariant = WeaponVariant.Gold : thisPlayer.secondaryWeaponVariant = WeaponVariant.Gold;
+                break;
+
+              case "normal":
+                thisPlayer.selectedWeapon === thisPlayer.weapon ? thisPlayer.primaryWeaponVariant = WeaponVariant.Normal : thisPlayer.secondaryWeaponVariant = WeaponVariant.Normal;
+                break;
+
+              default:
+                error("Invalid weapon variant " + variant);
+                return 1;
+            }
+          }
+        }
+        return 0;
+      }
+    ).then(argument("playerSID", integer())
+      .executes(
+        (context) => {
+          let playerSID = context.getArgument("playerSID", Number);
+          let game = getGame();
+          let variant = context.getArgument("variant", String);
+
+          if (game) {
+            let player = game.state.players.find(
+              (player) => player.id == playerSID
+            );
+
+            if (player) {
+              switch (variant) {
+                case "ruby":
+                  player.selectedWeapon === player.weapon ? player.primaryWeaponVariant = WeaponVariant.Ruby : player.secondaryWeaponVariant = WeaponVariant.Ruby;
+                  break;
+
+                case "diamond":
+                  player.selectedWeapon === player.weapon ? player.primaryWeaponVariant = WeaponVariant.Diamond : player.secondaryWeaponVariant = WeaponVariant.Diamond;
+                  break;
+
+                case "gold":
+                  player.selectedWeapon === player.weapon ? player.primaryWeaponVariant = WeaponVariant.Gold : player.secondaryWeaponVariant = WeaponVariant.Gold;
+                  break;
+
+                case "normal":
+                  player.selectedWeapon === player.weapon ? player.primaryWeaponVariant = WeaponVariant.Normal : player.secondaryWeaponVariant = WeaponVariant.Normal;
+                  break;
+
+                default:
+                  error("Invalid weapon variant " + variant);
+                  return 1;
+              }
+            }
+          }
+          return 0;
+        }
+      )
+    )
   )
 );
 

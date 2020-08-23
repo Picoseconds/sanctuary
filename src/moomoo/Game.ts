@@ -14,13 +14,19 @@ import GameObject from "../gameobjects/GameObject";
 import { PacketType } from "../packets/PacketType";
 import FileAsync from 'lowdb/adapters/FileAsync';
 import { PacketFactory } from "../packets/PacketFactory";
-import { getWeaponDamage, getWeaponAttackDetails, getItemCost, getPlaceable, PrimaryWeapons, getWeaponGatherAmount, getPrerequisiteItem, getGroupID, Weapons, getPrerequisiteWeapon, getPlaceOffset, getWeaponSpeedMultiplier, getStructureDamage } from "../items/items";
+import { getWeaponDamage, getWeaponAttackDetails, getItemCost, getPlaceable, PrimaryWeapons, getWeaponGatherAmount, getPrerequisiteItem, getGroupID, Weapons, getPrerequisiteWeapon, getWeaponSpeedMultiplier, getStructureDamage, getPPS } from "../items/items";
 import { gameObjectSizes, GameObjectType } from "../gameobjects/gameobjects";
 import { getUpgrades, getWeaponUpgrades } from './Upgrades';
 import { getHat } from './Hats';
 import { WeaponVariant } from './Weapons';
+import { ItemType } from '../items/UpgradeItems';
 
 let currentGame: Game | null = null;
+
+const DEFAULT_MAX_CPS = 25;
+
+let MAX_CPS = (process.env.MAX_CPS && parseInt(process.env.MAX_CPS, 10)) || DEFAULT_MAX_CPS;
+if (isNaN(MAX_CPS)) MAX_CPS = DEFAULT_MAX_CPS;
 
 interface DBSchema {
   bannedIPs: string[];
@@ -45,7 +51,7 @@ export default class Game {
   }
 
   async initDatabase() {
-    this.db = await (await lowdb(new FileAsync<DBSchema>('./.data/sanctuary.json')));
+    this.db = await lowdb(new FileAsync<DBSchema>('./.data/sanctuary.json'));
     this.db.defaults({ bannedIPs: [], moderatorIPs: [] })
       .write();
   }
@@ -57,7 +63,9 @@ export default class Game {
     this.started = true;
     this.lastUpdate = Date.now();
     this.generateStructures();
-    setInterval(this.sendLeaderboardUpdates.bind(this), 1000);
+
+    setInterval(this.updateWindmills.bind(this), 1000);
+
     process.nextTick(this.update);
   }
 
@@ -69,21 +77,35 @@ export default class Game {
 
   generateStructures() {
     const gameObjectTypes = [GameObjectType.Tree, GameObjectType.Bush, GameObjectType.Mine, GameObjectType.GoldMine];
+    const desertGameObjectTypes = [GameObjectType.Bush, GameObjectType.Mine, GameObjectType.GoldMine];
+    const riverGameObjectTypes = [GameObjectType.Mine];
 
     outerLoop: for (let i = 0; i < 200; i++) {
+      let location = randomPos(14400, 14400);
       let gameObjectType =
-        gameObjectTypes[Math.floor(Math.random() * gameObjectTypes.length)];
+        location.y >= 12e3 ?
+          desertGameObjectTypes[Math.floor(Math.random() * desertGameObjectTypes.length)] :
+          (
+            location.y < 7550 && location.y > 6850 ?
+              riverGameObjectTypes[Math.floor(Math.random() * riverGameObjectTypes.length)] :
+              gameObjectTypes[Math.floor(Math.random() * gameObjectTypes.length)]
+          );
       let sizes = gameObjectSizes[gameObjectType];
 
       if (sizes) {
         let size = sizes[Math.floor(Math.random() * sizes.length)];
+
         let newGameObject = new GameObject(
           this.getNextGameObjectID(),
-          randomPos(14400, 14400),
+          location,
           0,
           size,
           gameObjectType,
-          gameObjectType == GameObjectType.Tree || gameObjectType == GameObjectType.Bush ? size * 0.6 : size
+          gameObjectType == GameObjectType.Tree || gameObjectType == GameObjectType.Bush ? size * 0.6 : size,
+          {},
+          -1,
+          -1,
+          gameObjectType == GameObjectType.Bush && location.y >= 12e3 ? 35 : 0,
         );
 
         for (let gameObject of this.state.gameObjects) {
@@ -101,7 +123,7 @@ export default class Game {
     // Only start on first connection to save resources
     if (!this.started) this.start();
 
-    if (this.clients.filter(client => client.ip === ip).length >= 4) return;
+    if (this.clients.filter(client => client.ip === ip).length >= 4) socket.terminate();
 
     let packetFactory = PacketFactory.getInstance();
 
@@ -111,7 +133,7 @@ export default class Game {
     let client = this.clients[this.clients.push(new Client(id, socket, ip)) - 1];
     let bannedIPs = this.db?.get("bannedIPs");
     if (bannedIPs) {
-      if ((await (await bannedIPs).includes(ip)).value()) {
+      if (bannedIPs.includes(ip).value()) {
         this.kickClient(client, "You are banned");
         return;
       }
@@ -119,7 +141,7 @@ export default class Game {
     if (!process.env.NO_MODERATORS) {
       let modIPs = this.db?.get("moderatorIPs");
       if (modIPs) {
-        if ((await (await modIPs).includes(ip)).value()) {
+        if (modIPs.includes(ip).value()) {
           client.admin = true;
         }
       }
@@ -133,7 +155,9 @@ export default class Game {
           this.state.players.splice(index, 1);
         }
 
-        this.state.gameObjects.filter(gameObj => gameObj.ownerSID != client.player?.id);
+        this.state.gameObjects.filter(gameObj => gameObj.ownerSID === client.player?.id).forEach(
+          gameObj => this.state.removeGameObject(gameObj)
+        );
 
         let tribeIndex = this.state.tribes.findIndex(
           tribe => tribe.ownerSID == client.player?.id
@@ -142,18 +166,13 @@ export default class Game {
         if (tribeIndex > -1)
           this.state.removeTribe(tribeIndex);
       }
+
+      let clientIndex = this.clients.indexOf(client);
+      if (clientIndex > -1)
+        this.clients.splice(clientIndex, 1);
     });
 
     socket.addListener("message", (msg) => {
-      if (Date.now() - client.lastPacket < 50) {
-        client.packets++;
-
-        if (client.packets > 10) this.kickClient(client, `Too many packets!`);
-      } else {
-        client.packets = 0;
-        client.lastPacket = Date.now();
-      }
-
       try {
         if (msg instanceof ArrayBuffer) {
           this.onMsg(client, packetFactory.deserializePacket(msg, Side.Server));
@@ -168,11 +187,11 @@ export default class Game {
         } else {
           this.kickClient(
             client,
-            "Message recieved was not an ArrayBuffer or a Buffer!"
+            "Kicked for hacks"
           );
         }
       } catch (e) {
-        // this.kickClient(client, `Invalid message: ${e}`);
+        this.kickClient(client, "Kicked for hacks");
       }
     });
 
@@ -230,7 +249,7 @@ export default class Game {
 
   async addModerator(client: Client) {
     client.admin = !0;
-    this.updatePlayerChar(client);
+    this.promoteClient(client);
     if (this.db) {
       if (!this.db.get("moderatorIPs").includes(client.ip).value()) {
         await this.db.get("moderatorIPs").push(client.ip).write();
@@ -252,6 +271,8 @@ export default class Game {
         )
       );
     }
+
+    this.sendLeaderboardUpdates();
   }
 
   makePlayerUpdateForClient(client: Client) {
@@ -380,6 +401,9 @@ export default class Game {
    * Called as often as possible for things like physics calculations
    */
   update() {
+    const now = Date.now();
+    const deltaTime = now - this.lastUpdate;
+
     let packetFactory = PacketFactory.getInstance();
 
     const TICK_INTERVAL = process.env.TICK_INTERVAL || 0;
@@ -422,16 +446,23 @@ export default class Game {
         );
       }
     });
+
     this.state.players.forEach((player) => {
+      if (player.dead) return;
+
       Physics.movePlayer(player, 33, this.state);
 
       if (Date.now() - player.lastDot >= 1000) {
         player.damageOverTime();
-        player.lastDot = Date.now();
+        player.lastDot = now;
       }
 
       if (player.isAttacking && player.selectedWeapon != Weapons.Shield && player.buildItem == -1) {
-        if (Date.now() - player.lastHitTime >= player.getWeaponHitTime()) {
+        if (now - player.lastHitTime >= player.getWeaponHitTime() + 120) {
+          let hat = getHat(player.hatID);
+
+          player.lastHitTime = now;
+
           let nearbyPlayers = player.getNearbyPlayers(this.state);
 
           let hitPlayers = Physics.checkAttack(
@@ -454,7 +485,20 @@ export default class Game {
               weaponVariant
             );
 
-            let hat = getHat(player.hatID);
+            let healAmount = (hat?.healD || 0) * dmg;
+            player.health += healAmount;
+
+            if (healAmount) {
+              player.client?.socket.send(
+                packetFactory.serializePacket(
+                  new Packet(
+                    PacketType.HEALTH_CHANGE,
+                    [player.location.x, player.location.y, -healAmount, 1]
+                  )
+                )
+              );
+            }
+
             let hitPlayerHat = getHat(hitPlayer.hatID);
 
             if (hat && hat.dmgMultO)
@@ -482,9 +526,13 @@ export default class Game {
               hitPlayer.bleedDmg = 5;
               hitPlayer.bleedAmt = 0;
               hitPlayer.maxBleedAmt = 5;
+            } else if (hat?.poisonDmg) {
+              hitPlayer.bleedDmg = hat.poisonDmg;
+              hitPlayer.bleedAmt = 0;
+              hitPlayer.maxBleedAmt = hat.poisonTime;
             }
 
-            if (hitPlayer.health <= 0 && hitPlayer.client && !hitPlayer.client.admin) {
+            if (hitPlayer.health <= 0 && hitPlayer.client && !hitPlayer.invincible) {
               this.killPlayer(hitPlayer);
               player.kills++;
             } else {
@@ -513,7 +561,6 @@ export default class Game {
           for (let hitGameObject of hitGameObjects) {
             if (hitGameObject.health !== -1) {
               let dmgMult = 1;
-              let hat = getHat(player.hatID);
 
               if (hat && hat.bDmg)
                 dmgMult *= hat.bDmg;
@@ -536,6 +583,11 @@ export default class Game {
                       player.stone += cost[1] as number;
                       break;
                   }
+
+                  if (player.selectedWeapon == player.weapon)
+                    player.primaryWeaponExp += cost[1] as number;
+                  else
+                    player.secondaryWeaponExp += cost[1] as number;
                 }
 
                 this.state.removeGameObject(hitGameObject);
@@ -564,19 +616,66 @@ export default class Game {
               case GameObjectType.Bush:
                 player.food += gather;
                 player.xp += 4 * gather;
+
+                if (player.selectedWeapon == player.weapon)
+                  player.primaryWeaponExp += gather;
+                else
+                  player.secondaryWeaponExp += gather;
                 break;
               case GameObjectType.Mine:
                 player.stone += gather;
                 player.xp += 4 * gather;
+
+                if (player.selectedWeapon == player.weapon)
+                  player.primaryWeaponExp += gather;
+                else
+                  player.secondaryWeaponExp += gather;
                 break;
               case GameObjectType.Tree:
                 player.wood += gather;
                 player.xp += 4 * gather;
+
+                if (player.selectedWeapon == player.weapon)
+                  player.primaryWeaponExp += gather;
+                else
+                  player.secondaryWeaponExp += gather;
                 break;
               case GameObjectType.GoldMine:
-                player.points += gather == 1 ? 5 : gather;
+                player.points += gather == 1 || player.selectedWeapon == Weapons.McGrabby ? 5 : gather;
+                player.xp += 4 * gather;
+
+                if (player.selectedWeapon == player.weapon)
+                  player.primaryWeaponExp += gather == 1 ? 5 : gather;
+                else
+                  player.secondaryWeaponExp += gather == 1 || player.selectedWeapon == Weapons.McGrabby ? 5 : gather;
                 break;
             }
+
+            if (hitGameObject.isPlayerGameObject()) {
+            switch (hitGameObject.data) {
+              case ItemType.Sapling:
+                player.wood += gather;
+                player.xp += 4 * gather;
+
+                if (player.selectedWeapon == player.weapon)
+                  player.primaryWeaponExp += gather;
+                else
+                  player.secondaryWeaponExp += gather;
+                break;
+              case ItemType.Mine:
+                player.stone += gather;
+                player.xp += 4 * gather;
+
+                if (player.selectedWeapon == player.weapon)
+                  player.primaryWeaponExp += gather;
+                else
+                  player.secondaryWeaponExp += gather;
+                break;
+            }
+          }
+
+            if (hitGameObject.type !== GameObjectType.GoldMine)
+              player.points += (hat?.extraGold || 0) * gather;
 
             player.client?.socket.send(
               packetFactory.serializePacket(
@@ -589,15 +688,10 @@ export default class Game {
           }
 
           this.gatherAnim(player, hitGameObjects.length > 0);
-          player.lastHitTime = Date.now();
         }
       }
-    });
 
-    const deltaTime = Date.now() - this.lastUpdate;
-
-    for (let player of this.state.players) {
-      if (player.moveDirection !== null) {
+      if (player.moveDirection !== null && !player.dead) {
         let speedMult = player.location.y > 2400 ? player.spdMult : 0.8 * player.spdMult;
 
         if (player.hatID !== -1) {
@@ -620,7 +714,7 @@ export default class Game {
 
         this.sendGameObjects(player);
       }
-    }
+    });
 
     this.lastUpdate = Date.now();
     setTimeout(this.update, 33);
@@ -693,8 +787,9 @@ export default class Game {
       );
     }
   }
-  updatePlayerChar(client: Client) {
-    if (!client.player) return console.log('no clientplayer thing error fix this aaaaaaaaaaaaaaaaaaaaa');
+
+  promoteClient(client: Client) {
+    if (!client.player) return;
     let packetFactory = PacketFactory.getInstance();
     client.socket.send(
       packetFactory.serializePacket(
@@ -742,6 +837,14 @@ export default class Game {
     );
   }
 
+  updateWindmills() {
+    for (let windmill of this.state.gameObjects.filter(gameObj => gameObj.isPlayerGameObject() && getGroupID(gameObj.data) == 3)) {
+      let player = this.state.players.find(player => player.id == windmill.ownerSID);
+
+      if (player && !player.dead)
+        player.points += getPPS(windmill.data);
+    }
+  }
   /**
    * Handles packets from the client
    * @param client the client sending the message
@@ -752,6 +855,8 @@ export default class Game {
 
     switch (packet.type) {
       case PacketType.SPAWN:
+        if (client.player && !client.player.dead) this.kickClient(client, "Kicked for hacks");
+
         if (
           "name" in packet.data[0] &&
           "moofoll" in packet.data[0] &&
@@ -775,8 +880,6 @@ export default class Game {
               newPlayer = player;
             }
 
-            this.sendLeaderboardUpdates();
-
             newPlayer.location = randomPos(14400, 14400);
             newPlayer.name =
               packet.data[0].name > 15 || packet.data[0].name === ""
@@ -796,6 +899,8 @@ export default class Game {
                 new Packet(PacketType.PLAYER_START, [newPlayer.id])
               )
             );
+
+            this.sendLeaderboardUpdates();
 
             client.socket.send(
               packetFactory.serializePacket(
@@ -833,10 +938,19 @@ export default class Game {
       case PacketType.ATTACK:
         if (client.player) {
           if (packet.data[0]) {
+            if (Date.now() - client.lastAttackTime < 1000 / MAX_CPS) {
+              client.lastAttackTime = Date.now();
+              return;
+            }
+
+            client.lastAttackTime = Date.now();
+
             this.normalAttack(client.player);
           } else {
             client.player.isAttacking = false;
           }
+        } else {
+          this.kickClient(client, "Kicked for hacks");
         }
         break;
       case PacketType.PLAYER_MOVE:
@@ -850,12 +964,14 @@ export default class Game {
         if (client.player) client.player.angle = packet.data[0];
         break;
       case PacketType.CHAT:
+        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
+
         for (let badWord of badWords) {
           if (packet.data[0].includes(badWord))
             packet.data[0] = packet.data[0].replace(new RegExp(`\\b${badWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'g'), "M" + "o".repeat(badWord.length - 1));
         }
 
-        if (packet.data[0].startsWith("/") && client.admin) {
+        if (packet.data[0].startsWith("/") && (client.admin || packet.data[0].startsWith("/login "))) {
           console.runCommand(packet.data[0].substring(1), client.player || undefined);
         } else {
           let chatPacket = packetFactory.serializePacket(
@@ -872,6 +988,8 @@ export default class Game {
         }
         break;
       case PacketType.CLAN_CREATE:
+        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
+
         if (client.player) {
           let tribe = this.state.addTribe(packet.data[0], client.player.id);
 
@@ -883,17 +1001,21 @@ export default class Game {
                 new Packet(PacketType.PLAYER_SET_CLAN, [tribe.name, true])
               )
             );
+
+            this.state.updateClanPlayers(tribe);
           }
         }
         break;
       case PacketType.CLAN_REQ_JOIN:
+        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
+
         if (client.player && client.player.clanName === null) {
           let tribe = this.state.tribes.find(
             (tribe) => tribe.name === packet.data[0]
           );
           let ownerClient = this.state.players.find(player => player.id === tribe?.ownerSID)?.client;
 
-          if (tribe) {
+          if (tribe && ownerClient?.tribeJoinQueue[0] != client.player) {
             ownerClient?.tribeJoinQueue.push(client.player);
             ownerClient?.socket.send(
               packetFactory.serializePacket(
@@ -904,10 +1026,13 @@ export default class Game {
               )
             )
           }
-
+        } else {
+          this.kickClient(client, "Kicked for hacks")
         }
         break;
       case PacketType.CLAN_ACC_JOIN:
+        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
+
         if (client.tribeJoinQueue.length && client.player && packet.data[1]) {
           let tribe = this.state.tribes.find(
             (tribe) => tribe.ownerSID === client.player?.id
@@ -918,6 +1043,9 @@ export default class Game {
             player.clanName = tribe.name;
 
             this.state.joinClan(player, tribe);
+
+            // for pit traps to appear
+            this.sendGameObjects(player);
           }
         }
 
@@ -962,9 +1090,15 @@ export default class Game {
             client.player.buildItem = -1;
 
             if (client.player.weapon == packet.data[0]) {
+              if (client.player.selectedWeapon != client.player.weapon)
+                client.player.lastHitTime = 0;
               client.player.selectedWeapon = client.player.weapon;
             } else if (client.player.secondaryWeapon == packet.data[0]) {
+              if (client.player.selectedWeapon != client.player.secondaryWeapon)
+                client.player.lastHitTime = 0;
               client.player.selectedWeapon = client.player.secondaryWeapon;
+            } else {
+              this.kickClient(client, "Kicked for hacks");
             }
           } else {
             let itemCost = getItemCost(packet.data[0]);
@@ -996,6 +1130,8 @@ export default class Game {
         }
         break;
       case PacketType.LEAVE_CLAN:
+        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
+
         if (client.player) {
           let tribeIndex = this.state.tribes.findIndex(tribe => tribe.membersSIDs.includes(client.player?.id as number));
           let tribe = this.state.tribes[tribeIndex];
@@ -1009,7 +1145,12 @@ export default class Game {
         }
         break;
       case PacketType.BUY_AND_EQUIP:
+        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
+
         let isAcc = packet.data[2];
+
+        // TODO: actually implement accessories
+        if (isAcc) return;
 
         if ((!getHat(packet.data[1]) || getHat(packet.data[1])?.dontSell) && packet.data[1] !== 0) {
           this.kickClient(client, "Kicked for hacks");
@@ -1065,7 +1206,26 @@ export default class Game {
           }
         }
         break;
+      case PacketType.CLAN_KICK:
+        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
+
+        if (client.player) {
+          let tribeIndex = this.state.tribes.findIndex(tribe => tribe.ownerSID == client.player?.id);
+          let tribe = this.state.tribes[tribeIndex];
+
+          if (tribeIndex < 0) this.kickClient(client, "Kicked for hacks");
+          if (!tribe?.membersSIDs.includes(packet.data[0])) this.kickClient(client, "Kicked for hacks");
+
+          let player = this.state.players.find(player => player.id == packet.data[0]);
+          if (!player) this.kickClient(client, "Kicked for hacks");
+
+          if (player)
+            this.state.leaveClan(player, tribeIndex);
+        }
+        break;
       case PacketType.SELECT_UPGRADE:
+        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
+
         if (client.player) {
           let item = packet.data[0] as number;
           let upgrades = getUpgrades(client.player.upgradeAge);
@@ -1083,10 +1243,14 @@ export default class Game {
                 if (client.player.selectedWeapon == client.player.weapon)
                   client.player.selectedWeapon = item;
                 client.player.weapon = item;
+                client.player.primaryWeaponVariant = WeaponVariant.Normal;
+                client.player.primaryWeaponExp = 0;
               } else {
                 if (client.player.selectedWeapon == client.player.secondaryWeapon)
                   client.player.selectedWeapon = item;
                 client.player.secondaryWeapon = item;
+                client.player.secondaryWeaponVariant = WeaponVariant.Normal;
+                client.player.secondaryWeaponExp = 0;
               }
             } else {
               this.kickClient(client, "Kicked for hacks");
@@ -1145,6 +1309,8 @@ export default class Game {
               )
             );
           }
+        } else {
+          this.kickClient(client, "Kicked for hacks");
         }
         break;
     }
