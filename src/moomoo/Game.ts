@@ -841,8 +841,11 @@ export default class Game {
     for (let windmill of this.state.gameObjects.filter(gameObj => gameObj.isPlayerGameObject() && getGroupID(gameObj.data) == 3)) {
       let player = this.state.players.find(player => player.id == windmill.ownerSID);
 
-      if (player && !player.dead)
-        player.points += getPPS(windmill.data);
+      if (player && !player.dead) {
+        let hat = getHat(player.hatID);
+
+        player.points += getPPS(windmill.data) + (hat?.pps || 0);
+      }
     }
   }
   /**
