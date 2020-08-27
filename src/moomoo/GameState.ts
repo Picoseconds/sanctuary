@@ -35,7 +35,9 @@ export default class GameState {
             [location.x, location.y, angle, getProjectileRange(type), getProjectileSpeed(type), type, layer, newProjectile.id]
           )
         )
-      )
+      );
+
+      player.client?.seenProjectiles.push(newProjectile.id);
     });
   }
 
