@@ -952,6 +952,7 @@ export default class Game {
         let hat = getHat(player.hatID);
 
         player.points += getPPS(windmill.data) + (hat?.pps || 0);
+        player.xp += getPPS(windmill.data) + (hat?.pps || 0);
       }
     }
   }
