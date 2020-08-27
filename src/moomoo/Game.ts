@@ -432,6 +432,7 @@ export default class Game {
               )
             )
           );
+          player.client.seenProjectiles.push(projectile.id);
         }
         if (Physics.collideProjectilePlayer(projectile, player) && player.id != projectile.ownerSID) {
           if (owner)
