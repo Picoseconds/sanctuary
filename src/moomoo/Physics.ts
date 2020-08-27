@@ -10,6 +10,7 @@ import { Packet } from "../packets/Packet";
 import { PacketFactory } from "../packets/PacketFactory";
 import Projectile from "../projectiles/Projectile";
 import { getGame } from "./Game";
+import { randomPos } from "./util";
 
 function collideCircles(pos1: Vec2, r1: number, pos2: Vec2, r2: number) {
   return pos1.distance(pos2) <= r1 + r2;
@@ -68,6 +69,9 @@ function tryMovePlayer(player: Player, delta: number, xVel: number, yVel: number
             Math.cos(gameObj.angle) * 0.3,
             Math.sin(gameObj.angle) * 0.3
           );
+          break;
+        case ItemType.Teleporter:
+          player.location = randomPos(14400 + 35, 14400 - 35);
           break;
       }
         if (!hasCollision(gameObj.data)) continue;
