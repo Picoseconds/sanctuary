@@ -60,20 +60,20 @@ function tryMovePlayer(player: Player, delta: number, xVel: number, yVel: number
 
           player.client?.seenGameObjects.push(gameObj.id);
         }
-     switch (gameObj.data) {
-        case ItemType.PitTrap:
-          gameObj.isEnemy(player, state.tribes) && (inTrap = !0);
-          break;
-        case ItemType.BoostPad / 2:
-          player.velocity.add(
-            Math.cos(gameObj.angle) * 0.3,
-            Math.sin(gameObj.angle) * 0.3
-          );
-          break;
-        case ItemType.Teleporter:
-          player.location = randomPos(14400 + 35, 14400 - 35);
-          break;
-      }
+        switch (gameObj.data) {
+          case ItemType.PitTrap:
+            gameObj.isEnemy(player, state.tribes) && (inTrap = !0);
+            break;
+          case ItemType.BoostPad:
+            player.velocity.add(
+              Math.cos(gameObj.angle) * 0.3,
+              Math.sin(gameObj.angle) * 0.3
+            );
+            break;
+          case ItemType.Teleporter:
+            player.location = randomPos(14400 + 35, 14400 - 35);
+            return;
+        }
         if (!hasCollision(gameObj.data)) continue;
       }
 
