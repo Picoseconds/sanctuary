@@ -68,6 +68,8 @@ packetTypeMapping[PacketType.IO_INIT] = { value: "io-init", side: Side.Client };
 packetTypeMapping[PacketType.HEALTH_CHANGE] = { value: "t", side: Side.Client };
 packetTypeMapping[PacketType.JOIN_REQUEST] = { value: "an", side: Side.Client };
 packetTypeMapping[PacketType.REMOVE_GAME_OBJ] = { value: "12", side: Side.Client };
+packetTypeMapping[PacketType.ADD_PROJECTILE] = { value: "18", side: Side.Client };
+packetTypeMapping[PacketType.UPDATE_PROJECTILES] = { value: "19", side: Side.Client };
 
 let reversePacketTypeMapping: ReverseMapping[] = [];
 

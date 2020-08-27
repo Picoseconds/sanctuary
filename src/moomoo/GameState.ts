@@ -7,15 +7,47 @@ import { Packet } from "../packets/Packet";
 import { PacketFactory } from "../packets/PacketFactory";
 import GameObject from "../gameobjects/GameObject";
 import { PacketType } from "../packets/PacketType";
+import Projectile from "../projectiles/Projectile";
+import { getProjectileSpeed, getProjectileRange } from "../projectiles/projectiles";
 
 export default class GameState {
   public game: Game;
   public gameObjects: GameObject[] = [];
   public players: Player[] = [];
   public tribes: Tribe[] = [];
+  public projectiles: Projectile[] = [];
 
   constructor(game: Game) {
     this.game = game;
+  }
+
+  addProjectile(type: number, location: Vec2, player?: Player, angle = player?.angle, layer = player?.layer) {
+    let packetFactory = PacketFactory.getInstance();
+    let newProjectile = new Projectile(this.projectiles.length > 0 ? Math.max(...this.projectiles.map((projectile) => projectile.id)) + 1 : 0, location, type, getProjectileSpeed(type) || 1, angle || 0, layer || 0, player?.id || -1);
+
+    this.projectiles.push(newProjectile);
+
+    this.getPlayersNearProjectile(newProjectile).forEach(player => {
+      player.client?.socket.send(
+        packetFactory.serializePacket(
+          new Packet(
+            PacketType.ADD_PROJECTILE,
+            [location.x, location.y, angle, getProjectileRange(type), getProjectileSpeed(type), type, layer, newProjectile.id]
+          )
+        )
+      )
+    });
+  }
+
+  removeProjectile(projectile: Projectile) {
+    let packetFactory = PacketFactory.getInstance();
+
+    this.projectiles.splice(this.projectiles.indexOf(projectile), 1);
+  }
+
+  getPlayersNearProjectile(projectile: Projectile) {
+    const RADIUS = process.env.PLAYER_NEARBY_RADIUS || 1250;
+    return this.players.filter(player => !player.dead && player.location.distance(projectile.location) < RADIUS);
   }
 
   removeGameObject(gameObject: GameObject) {

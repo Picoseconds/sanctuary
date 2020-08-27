@@ -41,6 +41,21 @@ function getHitTime(weapon: Weapons) {
   return weapons[weapon].speed || -1;
 }
 
+function isRangedWeapon(weapon: Weapons) {
+  return Object.keys(weapons[weapon]).includes("projectile");
+}
+
+function getProjectileType(weapon: Weapons) {
+  let projType = weapons[weapon].projectile;
+  if (typeof projType == "undefined") return -1;
+
+  return projType;
+}
+
+function getRecoil(weapon: Weapons) {
+  return weapons[weapon].rec || 0;
+}
+
 function getWeaponAttackDetails(item: Weapons): AttackDetails {
   let weapon = weapons.find(weapon => weapon.id == item);
   return { kbMultiplier: weapon?.knock || 1, attackRange: weapon?.range || 10 };
@@ -135,6 +150,10 @@ function shouldHideFromEnemy(item: ItemType) {
   return !!items[item].hideFromEnemy;
 }
 
+function getWeaponLength(weapon: Weapons) {
+  return weapons[weapon].length;
+}
+
 export {
   PrimaryWeapons,
   SecondaryWeapons,
@@ -157,5 +176,9 @@ export {
   getGameObjDamage,
   getGameObjPlaceLimit,
   shouldHideFromEnemy,
-  getPPS
+  getPPS,
+  isRangedWeapon,
+  getProjectileType,
+  getWeaponLength,
+  getRecoil
 };

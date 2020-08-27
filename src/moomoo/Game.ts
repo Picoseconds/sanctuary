@@ -3,6 +3,7 @@ import WebSocket from "ws";
 import Client from "./Client";
 import Player from "./Player";
 import * as lowDb from 'lowdb';
+import NanoTimer from "nanotimer";
 import { randomPos, chunk, stableSort } from "./util";
 import msgpack from "msgpack-lite";
 import GameState from "./GameState";
@@ -14,12 +15,13 @@ import GameObject from "../gameobjects/GameObject";
 import { PacketType } from "../packets/PacketType";
 import FileAsync from 'lowdb/adapters/FileAsync';
 import { PacketFactory } from "../packets/PacketFactory";
-import { getWeaponDamage, getWeaponAttackDetails, getItemCost, getPlaceable, PrimaryWeapons, getWeaponGatherAmount, getPrerequisiteItem, getGroupID, Weapons, getPrerequisiteWeapon, getWeaponSpeedMultiplier, getStructureDamage, getPPS } from "../items/items";
+import { getWeaponDamage, getWeaponAttackDetails, getItemCost, getPlaceable, PrimaryWeapons, getWeaponGatherAmount, getPrerequisiteItem, getGroupID, Weapons, getPrerequisiteWeapon, getWeaponSpeedMultiplier, getStructureDamage, getPPS, isRangedWeapon, getProjectileType, getWeaponLength, getRecoil } from "../items/items";
 import { gameObjectSizes, GameObjectType } from "../gameobjects/gameobjects";
 import { getUpgrades, getWeaponUpgrades } from './Upgrades';
 import { getHat } from './Hats';
 import { WeaponVariant } from './Weapons';
 import { ItemType } from '../items/UpgradeItems';
+import { getProjectileRange, getProjectileSpeed } from '../projectiles/projectiles';
 
 let currentGame: Game | null = null;
 
@@ -40,6 +42,7 @@ export default class Game {
   public lastTick: number = 0;
   public started: boolean = false;
   lastUpdate: number = 0;
+  physTimer: NanoTimer | undefined;
 
   constructor() {
     this.state = new GameState(this);
@@ -62,6 +65,8 @@ export default class Game {
   start() {
     this.started = true;
     this.lastUpdate = Date.now();
+    this.physTimer = new NanoTimer();
+    this.physTimer.setInterval(this.physUpdate.bind(this), '', '100u');
     this.generateStructures();
 
     setInterval(this.updateWindmills.bind(this), 1000);
@@ -397,6 +402,126 @@ export default class Game {
     }
   }
 
+  updateProjectiles(deltaTime: number) {
+    let packetFactory = PacketFactory.getInstance();
+
+    this.state.projectiles.forEach(projectile => {
+      projectile.location.add(projectile.speed * Math.cos(projectile.angle) * deltaTime, projectile.speed * Math.sin(projectile.angle) * deltaTime);
+      projectile.distance += projectile.speed * deltaTime;
+
+      this.state.getPlayersNearProjectile(projectile).forEach(player => {
+        player.client?.socket.send(
+          packetFactory.serializePacket(
+            new Packet(
+              PacketType.UPDATE_PROJECTILES,
+              [projectile.id, projectile.distance]
+            )
+          )
+        )
+      });
+
+      let owner = this.state.players.find(player => player.id == projectile.ownerSID);
+
+      this.state.getPlayersNearProjectile(projectile).forEach(player => {
+        if (player.client && !player.client.seenProjectiles.includes(projectile.id)) {
+          player.client?.socket.send(
+            packetFactory.serializePacket(
+              new Packet(
+                PacketType.ADD_PROJECTILE,
+                [projectile.location.x, projectile.location.y, projectile.angle, (getProjectileRange(projectile.type) || 100) - projectile.distance, getProjectileSpeed(projectile.type), projectile.type, projectile.layer, projectile.id]
+              )
+            )
+          );
+        }
+        if (Physics.collideProjectilePlayer(projectile, player) && player.id != projectile.ownerSID) {
+          if (owner)
+            this.damageFrom(player, owner, projectile.damage, false);
+
+          player.velocity.add(.3 * Math.cos(projectile.angle) * deltaTime, .3 * Math.sin(projectile.angle) * deltaTime);
+          if (player.health <= 0) this.killPlayer(player);
+
+          if (owner) {
+            owner.client?.socket.send(
+              packetFactory.serializePacket(
+                new Packet(
+                  PacketType.HEALTH_CHANGE, [player.location.x, player.location.y, projectile.damage, 1]
+                )
+              )
+            );
+          }
+          this.state.projectiles.splice(this.state.projectiles.indexOf(projectile), 1);
+        }
+      });
+
+      this.state.gameObjects.forEach(gameObj => {
+        if (Physics.collideProjectileGameObject(projectile, gameObj)) {
+          this.state.projectiles.splice(this.state.projectiles.indexOf(projectile), 1);
+
+          for (let nearbyPlayer of this.state.getPlayersNearProjectile(projectile)) {
+            nearbyPlayer.client?.socket.send(
+              packetFactory.serializePacket(
+                new Packet(PacketType.WIGGLE, [
+                  projectile.angle,
+                  gameObj.id,
+                ])
+              )
+            );
+          }
+        }
+      });
+    });
+  }
+
+  damageFrom(to: Player, from: Player, dmg: number, direct = true) {
+    let packetFactory = PacketFactory.getInstance();
+
+    let attackerHat = getHat(from.hatID);
+    let recieverHat = getHat(to.hatID);
+
+    let healAmount = (attackerHat?.healD || 0) * dmg;
+    from.health += healAmount;
+
+    if (healAmount) {
+      from.client?.socket.send(
+        packetFactory.serializePacket(
+          new Packet(
+            PacketType.HEALTH_CHANGE,
+            [from.location.x, from.location.y, Math.round(-healAmount), 1]
+          )
+        )
+      );
+    }
+
+    if (attackerHat && attackerHat.dmgMultO)
+      dmg *= attackerHat.dmgMultO;
+
+    if (recieverHat) {
+      dmg *= recieverHat.dmgMult || 1;
+
+      if (recieverHat.dmg) {
+        from.health -= recieverHat.dmg * dmg;
+      }
+
+      if (recieverHat.dmgK && direct) {
+        let knockback = recieverHat.dmgK;
+        from.velocity.add(
+          knockback * Math.cos((from.angle - Math.PI) % (2 * Math.PI)),
+          knockback * Math.sin((from.angle - Math.PI) % (2 * Math.PI))
+        );
+      }
+    }
+
+    if (to.health - dmg <= 0) {
+      from.kills++;
+      from.points += to.age * 100 * (attackerHat?.kScrM || 1);
+
+      if (attackerHat?.goldSteal) {
+        from.points += attackerHat.goldSteal * to.points;
+      }
+    }
+
+    to.health -= dmg;
+  }
   /**
    * Called as often as possible for things like physics calculations
    */
@@ -459,148 +584,202 @@ export default class Game {
 
       if (player.isAttacking && player.selectedWeapon != Weapons.Shield && player.buildItem == -1) {
         if (now - player.lastHitTime >= player.getWeaponHitTime() + 120) {
-          let hat = getHat(player.hatID);
-
           player.lastHitTime = now;
 
-          let nearbyPlayers = player.getNearbyPlayers(this.state);
+          if (isRangedWeapon(player.selectedWeapon)) {
+            let projectileDistance = 35 / 2;
 
-          let hitPlayers = Physics.checkAttack(
-            player,
-            nearbyPlayers
-          );
-          let hitGameObjects = Physics.checkAttackGameObj(
-            player,
-            player.getNearbyGameObjects(this.state)
-          );
-
-          let weaponVariant = player.selectedWeapon == player.weapon ?
-            player.primaryWeaponVariant :
-            player.secondaryWeaponVariant;
-          for (let hitPlayer of hitPlayers) {
-            if (hitPlayer.clanName == player.clanName && hitPlayer.clanName != null) continue;
-
-            let dmg = getWeaponDamage(
-              player.selectedWeapon,
-              weaponVariant
+            this.state.addProjectile(
+              getProjectileType(player.selectedWeapon),
+              player.location.add(projectileDistance * Math.cos(player.angle), projectileDistance * Math.sin(player.angle), true),
+              player
             );
 
-            let healAmount = (hat?.healD || 0) * dmg;
-            player.health += healAmount;
+            let recoilAngle = (player.angle + Math.PI) % (2 * Math.PI);
+            player.velocity.add(getRecoil(player.selectedWeapon) * Math.cos(recoilAngle), getRecoil(player.selectedWeapon) * Math.sin(recoilAngle))
+          } else {
+            let hat = getHat(player.hatID);
 
-            if (healAmount) {
-              player.client?.socket.send(
-                packetFactory.serializePacket(
-                  new Packet(
-                    PacketType.HEALTH_CHANGE,
-                    [player.location.x, player.location.y, -healAmount, 1]
-                  )
-                )
+            let nearbyPlayers = player.getNearbyPlayers(this.state);
+
+            let hitPlayers = Physics.checkAttack(
+              player,
+              nearbyPlayers
+            );
+            let hitGameObjects = Physics.checkAttackGameObj(
+              player,
+              player.getNearbyGameObjects(this.state)
+            );
+
+            let weaponVariant = player.selectedWeapon == player.weapon ?
+              player.primaryWeaponVariant :
+              player.secondaryWeaponVariant;
+            for (let hitPlayer of hitPlayers) {
+              if (hitPlayer.clanName == player.clanName && hitPlayer.clanName != null) continue;
+
+              let dmg = getWeaponDamage(
+                player.selectedWeapon,
+                weaponVariant
               );
-            }
 
-            let hitPlayerHat = getHat(hitPlayer.hatID);
+              this.damageFrom(hitPlayer, player, dmg);
 
-            if (hat && hat.dmgMultO)
-              dmg *= hat.dmgMultO;
-
-            if (hitPlayerHat) {
-              dmg *= hitPlayerHat.dmgMult || 1;
-
-              if (hitPlayerHat.dmg) {
-                player.health -= hitPlayerHat.dmg * dmg;
+              if (weaponVariant === WeaponVariant.Ruby) {
+                hitPlayer.bleedDmg = 5;
+                hitPlayer.bleedAmt = 0;
+                hitPlayer.maxBleedAmt = 5;
+              } else if (hat?.poisonDmg) {
+                hitPlayer.bleedDmg = hat.poisonDmg;
+                hitPlayer.bleedAmt = 0;
+                hitPlayer.maxBleedAmt = hat.poisonTime;
               }
 
-              if (hitPlayerHat.dmgK) {
-                let knockback = hitPlayerHat.dmgK;
+              if (hitPlayer.health <= 0 && hitPlayer.client && !hitPlayer.invincible) {
+                this.killPlayer(hitPlayer);
+                player.kills++;
+              } else {
+                let attackDetails = getWeaponAttackDetails(player.selectedWeapon);
+                let knockback = attackDetails.kbMultiplier * .3;
                 hitPlayer.velocity.add(
                   knockback * Math.cos(player.angle),
                   knockback * Math.sin(player.angle)
                 );
               }
-            }
 
-            hitPlayer.health -= dmg;
+              switch (player.selectedWeapon) {
+                case Weapons.McGrabby:
+                  player.points += Math.min(250, hitPlayer.points);
+                  hitPlayer.points -= Math.min(250, hitPlayer.points);
+                  break;
+              }
 
-            if (weaponVariant === WeaponVariant.Ruby) {
-              hitPlayer.bleedDmg = 5;
-              hitPlayer.bleedAmt = 0;
-              hitPlayer.maxBleedAmt = 5;
-            } else if (hat?.poisonDmg) {
-              hitPlayer.bleedDmg = hat.poisonDmg;
-              hitPlayer.bleedAmt = 0;
-              hitPlayer.maxBleedAmt = hat.poisonTime;
-            }
-
-            if (hitPlayer.health <= 0 && hitPlayer.client && !hitPlayer.invincible) {
-              this.killPlayer(hitPlayer);
-              player.kills++;
-            } else {
-              let attackDetails = getWeaponAttackDetails(player.selectedWeapon);
-              let knockback = attackDetails.kbMultiplier * 0.3;
-              hitPlayer.velocity.add(
-                knockback * Math.cos(player.angle),
-                knockback * Math.sin(player.angle)
+              player.client?.socket.send(
+                packetFactory.serializePacket(
+                  new Packet(PacketType.HEALTH_CHANGE, [hitPlayer.location.x, hitPlayer.location.y, Math.round(dmg), 1])
+                )
               );
             }
 
-            switch (player.selectedWeapon) {
-              case Weapons.McGrabby:
-                player.points += Math.min(250, hitPlayer.points);
-                hitPlayer.points -= Math.min(250, hitPlayer.points);
-                break;
-            }
+            for (let hitGameObject of hitGameObjects) {
+              if (hitGameObject.health !== -1) {
+                let dmgMult = 1;
 
-            player.client?.socket.send(
-              packetFactory.serializePacket(
-                new Packet(PacketType.HEALTH_CHANGE, [hitPlayer.location.x, hitPlayer.location.y, Math.round(dmg), 1])
-              )
-            );
-          }
+                if (hat && hat.bDmg)
+                  dmgMult *= hat.bDmg;
 
-          for (let hitGameObject of hitGameObjects) {
-            if (hitGameObject.health !== -1) {
-              let dmgMult = 1;
+                hitGameObject.health -= getStructureDamage(player.selectedWeapon) * dmgMult;
 
-              if (hat && hat.bDmg)
-                dmgMult *= hat.bDmg;
+                if (hitGameObject.health <= 0) {
+                  let itemCost = getItemCost(hitGameObject.data);
+                  let costs = chunk(itemCost, 2);
 
-              hitGameObject.health -= getStructureDamage(player.selectedWeapon) * dmgMult;
+                  for (let cost of costs) {
+                    switch (cost[0]) {
+                      case "food":
+                        player.food += cost[1] as number;
+                        break;
+                      case "wood":
+                        player.wood += cost[1] as number;
+                        break;
+                      case "stone":
+                        player.stone += cost[1] as number;
+                        break;
+                    }
 
-              if (hitGameObject.health <= 0) {
-                let itemCost = getItemCost(hitGameObject.data);
-                let costs = chunk(itemCost, 2);
-
-                for (let cost of costs) {
-                  switch (cost[0]) {
-                    case "food":
-                      player.food += cost[1] as number;
-                      break;
-                    case "wood":
-                      player.wood += cost[1] as number;
-                      break;
-                    case "stone":
-                      player.stone += cost[1] as number;
-                      break;
+                    if (player.selectedWeapon == player.weapon)
+                      player.primaryWeaponExp += cost[1] as number;
+                    else
+                      player.secondaryWeaponExp += cost[1] as number;
                   }
 
-                  if (player.selectedWeapon == player.weapon)
-                    player.primaryWeaponExp += cost[1] as number;
-                  else
-                    player.secondaryWeaponExp += cost[1] as number;
-                }
+                  this.state.removeGameObject(hitGameObject);
+                  this.sendGameObjects(player);
 
-                this.state.removeGameObject(hitGameObject);
-                this.sendGameObjects(player);
-
-                for (let otherPlayer of player.getNearbyPlayers(this.state)) {
-                  this.sendGameObjects(otherPlayer);
+                  for (let otherPlayer of player.getNearbyPlayers(this.state)) {
+                    this.sendGameObjects(otherPlayer);
+                  }
                 }
               }
-            }
 
-            for (let nearbyPlayer of nearbyPlayers) {
-              nearbyPlayer.client?.socket.send(
+              for (let nearbyPlayer of nearbyPlayers) {
+                nearbyPlayer.client?.socket.send(
+                  packetFactory.serializePacket(
+                    new Packet(PacketType.WIGGLE, [
+                      Math.atan2(hitGameObject.location.y - player.location.y, hitGameObject.location.x - player.location.x),
+                      hitGameObject.id,
+                    ])
+                  )
+                );
+              }
+
+              let gather = getWeaponGatherAmount(player.selectedWeapon);
+
+              switch (hitGameObject.type) {
+                case GameObjectType.Bush:
+                  player.food += gather;
+                  player.xp += 4 * gather;
+
+                  if (player.selectedWeapon == player.weapon)
+                    player.primaryWeaponExp += gather;
+                  else
+                    player.secondaryWeaponExp += gather;
+                  break;
+                case GameObjectType.Mine:
+                  player.stone += gather;
+                  player.xp += 4 * gather;
+
+                  if (player.selectedWeapon == player.weapon)
+                    player.primaryWeaponExp += gather;
+                  else
+                    player.secondaryWeaponExp += gather;
+                  break;
+                case GameObjectType.Tree:
+                  player.wood += gather;
+                  player.xp += 4 * gather;
+
+                  if (player.selectedWeapon == player.weapon)
+                    player.primaryWeaponExp += gather;
+                  else
+                    player.secondaryWeaponExp += gather;
+                  break;
+                case GameObjectType.GoldMine:
+                  player.points += gather == 1 || player.selectedWeapon == Weapons.McGrabby ? 5 : gather;
+                  player.xp += 4 * gather;
+
+                  if (player.selectedWeapon == player.weapon)
+                    player.primaryWeaponExp += gather == 1 ? 5 : gather;
+                  else
+                    player.secondaryWeaponExp += gather == 1 || player.selectedWeapon == Weapons.McGrabby ? 5 : gather;
+                  break;
+              }
+
+              if (hitGameObject.isPlayerGameObject()) {
+                switch (hitGameObject.data) {
+                  case ItemType.Sapling:
+                    player.wood += gather;
+                    player.xp += 4 * gather;
+
+                    if (player.selectedWeapon == player.weapon)
+                      player.primaryWeaponExp += gather;
+                    else
+                      player.secondaryWeaponExp += gather;
+                    break;
+                  case ItemType.Mine:
+                    player.stone += gather;
+                    player.xp += 4 * gather;
+
+                    if (player.selectedWeapon == player.weapon)
+                      player.primaryWeaponExp += gather;
+                    else
+                      player.secondaryWeaponExp += gather;
+                    break;
+                }
+              }
+
+              if (hitGameObject.type !== GameObjectType.GoldMine)
+                player.points += (hat?.extraGold || 0) * gather;
+
+              player.client?.socket.send(
                 packetFactory.serializePacket(
                   new Packet(PacketType.WIGGLE, [
                     Math.atan2(hitGameObject.location.y - player.location.y, hitGameObject.location.x - player.location.x),
@@ -610,84 +789,8 @@ export default class Game {
               );
             }
 
-            let gather = getWeaponGatherAmount(player.selectedWeapon);
-
-            switch (hitGameObject.type) {
-              case GameObjectType.Bush:
-                player.food += gather;
-                player.xp += 4 * gather;
-
-                if (player.selectedWeapon == player.weapon)
-                  player.primaryWeaponExp += gather;
-                else
-                  player.secondaryWeaponExp += gather;
-                break;
-              case GameObjectType.Mine:
-                player.stone += gather;
-                player.xp += 4 * gather;
-
-                if (player.selectedWeapon == player.weapon)
-                  player.primaryWeaponExp += gather;
-                else
-                  player.secondaryWeaponExp += gather;
-                break;
-              case GameObjectType.Tree:
-                player.wood += gather;
-                player.xp += 4 * gather;
-
-                if (player.selectedWeapon == player.weapon)
-                  player.primaryWeaponExp += gather;
-                else
-                  player.secondaryWeaponExp += gather;
-                break;
-              case GameObjectType.GoldMine:
-                player.points += gather == 1 || player.selectedWeapon == Weapons.McGrabby ? 5 : gather;
-                player.xp += 4 * gather;
-
-                if (player.selectedWeapon == player.weapon)
-                  player.primaryWeaponExp += gather == 1 ? 5 : gather;
-                else
-                  player.secondaryWeaponExp += gather == 1 || player.selectedWeapon == Weapons.McGrabby ? 5 : gather;
-                break;
-            }
-
-            if (hitGameObject.isPlayerGameObject()) {
-            switch (hitGameObject.data) {
-              case ItemType.Sapling:
-                player.wood += gather;
-                player.xp += 4 * gather;
-
-                if (player.selectedWeapon == player.weapon)
-                  player.primaryWeaponExp += gather;
-                else
-                  player.secondaryWeaponExp += gather;
-                break;
-              case ItemType.Mine:
-                player.stone += gather;
-                player.xp += 4 * gather;
-
-                if (player.selectedWeapon == player.weapon)
-                  player.primaryWeaponExp += gather;
-                else
-                  player.secondaryWeaponExp += gather;
-                break;
-            }
+            this.gatherAnim(player, hitGameObjects.length > 0);
           }
-
-            if (hitGameObject.type !== GameObjectType.GoldMine)
-              player.points += (hat?.extraGold || 0) * gather;
-
-            player.client?.socket.send(
-              packetFactory.serializePacket(
-                new Packet(PacketType.WIGGLE, [
-                  Math.atan2(hitGameObject.location.y - player.location.y, hitGameObject.location.x - player.location.x),
-                  hitGameObject.id,
-                ])
-              )
-            );
-          }
-
-          this.gatherAnim(player, hitGameObjects.length > 0);
         }
       }
 
@@ -718,6 +821,10 @@ export default class Game {
 
     this.lastUpdate = Date.now();
     setTimeout(this.update, 33);
+  }
+
+  physUpdate() {
+    this.updateProjectiles(.1);
   }
 
   /**

@@ -8,6 +8,8 @@ import { getHat } from "./Hats";
 import { PacketType } from "../packets/PacketType";
 import { Packet } from "../packets/Packet";
 import { PacketFactory } from "../packets/PacketFactory";
+import Projectile from "../projectiles/Projectile";
+import { getGame } from "./Game";
 
 function collideCircles(pos1: Vec2, r1: number, pos2: Vec2, r2: number) {
   return pos1.distance(pos2) <= r1 + r2;
@@ -74,6 +76,7 @@ function tryMovePlayer(player: Player, delta: number, xVel: number, yVel: number
       let dmg = gameObj.dmg;
 
       if (dmg && !(gameObj.isPlayerGameObject() && !gameObj.isEnemy(player, state.tribes)) && !player.spikeHit) {
+        let owner = state.players.find(player => player.id == gameObj.ownerSID);
         player.spikeHit = 2;
 
         let hat = getHat(player.hatID);
@@ -84,7 +87,12 @@ function tryMovePlayer(player: Player, delta: number, xVel: number, yVel: number
 
         let angle = Math.atan2(player.location.y - gameObj.location.y, player.location.x - gameObj.location.x);
         player.velocity.add(Math.cos(angle), Math.sin(angle));
-        player.health -= dmg;
+
+        if (owner) {
+          getGame()?.damageFrom(player, owner, gameObj.dmg, false);
+        } else {
+          player.health -= gameObj.dmg;
+        }
 
         state.players.find(player => player.id == gameObj.ownerSID)?.client?.socket.send(
           packetFactory.serializePacket(
@@ -180,4 +188,12 @@ function checkAttackGameObj(player: Player, gameObjects: GameObject[]) {
   return hitGameObjects;
 }
 
-export { collideCircles, collideRectangles, moveTowards, checkAttack, collideGameObjects, checkAttackGameObj, movePlayer, getAttackLocation };
+function collideProjectilePlayer(projectile: Projectile, player: Player) {
+  return collideCircles(projectile.location, 10, player.location, 35)
+}
+
+function collideProjectileGameObject(projectile: Projectile, gameObj: GameObject) {
+  return collideCircles(projectile.location, 10, gameObj.location, gameObj.scale);
+}
+
+export { collideCircles, collideRectangles, moveTowards, checkAttack, collideGameObjects, checkAttackGameObj, movePlayer, getAttackLocation, collideProjectilePlayer, collideProjectileGameObject };

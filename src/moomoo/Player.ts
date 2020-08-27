@@ -45,6 +45,8 @@ export default class Player extends Entity {
   public upgradeAge = 2;
   public invincible = false;
 
+  public layer = 0;
+
   public foodHealOverTime = 0;
   public foodHealOverTimeAmt = 0;
   public maxFoodHealOverTime = -1;
