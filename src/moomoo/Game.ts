@@ -1,5 +1,5 @@
 import lowdb from 'lowdb';
-import WebSocket from "ws";
+import { RecognizedString, WebSocket } from "uWebSockets.js";
 import Client from "./Client";
 import Player from "./Player";
 import * as lowDb from 'lowdb';
@@ -128,14 +128,15 @@ export default class Game {
     // Only start on first connection to save resources
     if (!this.started) this.start();
 
-    if (this.clients.filter(client => client.ip === ip).length >= 4) socket.terminate();
+    if (this.clients.filter(client => client.ip === ip).length >= 4) socket.end();
 
     let packetFactory = PacketFactory.getInstance();
 
     if (this.clients.some((client) => client.id === id))
       throw `There is already a client with ID ${id} in this Game!`;
 
-    let client = this.clients[this.clients.push(new Client(id, socket, ip)) - 1];
+	let client = this.clients[this.clients.push(new Client(id, socket, ip)) - 1];
+	socket.client = client;
     let bannedIPs = this.db?.get("bannedIPs");
     if (bannedIPs) {
       if (bannedIPs.includes(ip).value()) {
@@ -150,55 +151,17 @@ export default class Game {
           client.admin = true;
         }
       }
-    }
+	}
 
-    socket.addListener("close", () => {
-      if (client.player) {
-        const index = this.state.players.indexOf(client.player);
-
-        if (index > -1) {
-          this.state.players.splice(index, 1);
-        }
-
-        this.state.gameObjects.filter(gameObj => gameObj.ownerSID === client.player?.id).forEach(
-          gameObj => this.state.removeGameObject(gameObj)
-        );
-
-        let tribeIndex = this.state.tribes.findIndex(
-          tribe => tribe.ownerSID == client.player?.id
-        );
-
-        if (tribeIndex > -1)
-          this.state.removeTribe(tribeIndex);
-      }
-
-      let clientIndex = this.clients.indexOf(client);
-      if (clientIndex > -1)
-        this.clients.splice(clientIndex, 1);
-    });
-
-    socket.addListener("message", (msg) => {
+	socket.msgHandler = (msg: RecognizedString, isBinary: boolean) => {
+		if(!isBinary || typeof msg === 'string') return this.kickClient(client, "Kicked for hacks");
+		msg = new Uint8Array(msg);
       try {
-        if (msg instanceof ArrayBuffer) {
-          this.onMsg(client, packetFactory.deserializePacket(msg, Side.Server));
-        } else if (msg instanceof Buffer) {
-          this.onMsg(
-            client,
-            packetFactory.deserializePacket(
-              msg.buffer.slice(msg.byteOffset, msg.byteOffset + msg.byteLength),
-              Side.Server
-            )
-          );
-        } else {
-          this.kickClient(
-            client,
-            "Kicked for hacks"
-          );
-        }
+        this.onMsg(client, packetFactory.deserializePacket(msg, Side.Server));
       } catch (e) {
         this.kickClient(client, "Kicked for hacks");
       }
-    });
+    };
 
     socket.send(
       packetFactory.serializePacket(new Packet(PacketType.IO_INIT, [id]))
@@ -216,7 +179,35 @@ export default class Game {
       )
     );
   }
+  clientClose(socket: WebSocket) {
+	  let client = this.clients.filter(e => e.socket == socket)?.[0];
+	  /*
+		Good error handling practices are to log "OOPS" in console
+	  */
+	  if(!client) return console.log('OOPS');
+	if (client.player) {
+	  const index = this.state.players.indexOf(client.player);
 
+	  if (index > -1) {
+		this.state.players.splice(index, 1);
+	  }
+
+	  this.state.gameObjects.filter(gameObj => gameObj.ownerSID === client.player?.id).forEach(
+		gameObj => this.state.removeGameObject(gameObj)
+	  );
+
+	  let tribeIndex = this.state.tribes.findIndex(
+		tribe => tribe.ownerSID == client.player?.id
+	  );
+
+	  if (tribeIndex > -1)
+		this.state.removeTribe(tribeIndex);
+	}
+
+	let clientIndex = this.clients.indexOf(client);
+	if (clientIndex > -1)
+	  this.clients.splice(clientIndex, 1);
+  }
   kickClient(client: Client, reason: string = "kicked") {
     this.clients.splice(this.clients.indexOf(client), 1);
     console.log(`Kicked ${client.id}: ${reason}`);

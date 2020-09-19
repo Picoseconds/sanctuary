@@ -1,6 +1,5 @@
-import { Server as WSServer, default as WebSocket } from 'ws';
+import { WebSocket } from "uWebSockets.js";
 import Game from "./Game";
-import { IncomingMessage } from 'http';
 
 /**
  * Gets a unique (if game is passed) id for a MooMoo.io client
@@ -21,25 +20,16 @@ function getID(game: Game | null = null) {
         }
     }
 
-    return id;    
+    return id;
 }
 
 /**
  * Starts a MooMoo.io/Sanctuary server on an existing ws.Server
  * @param server the ws.Server to use
  */
-export function startServer(server: WSServer) {
+export function startServer() {
     let game = new Game();
-
-    server.addListener("connection", (socket: WebSocket, req: IncomingMessage) => {
-      let ip = "";
-
-      if (process.env.BEHIND_PROXY) {
-        ip = (req.headers['x-forwarded-for'] as string).split(/\s*,\s*/)[0];
-      } else if (req.socket.remoteAddress) {
-        ip = req.socket.remoteAddress;
-      }
-
-      game.addClient(getID(game), socket, ip);
-    });
+	return [(socket: WebSocket) => {
+		game.addClient(getID(game), socket, Buffer.from(socket.getRemoteAddressAsText()).toString('utf8'));
+	}, game.clientClose.bind(game)]
 };
