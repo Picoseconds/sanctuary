@@ -48,7 +48,7 @@ const app = (uWS.App()).ws('/*', {
 		while (ws.getBufferedAmount() < 1024 && ws.msgQueue.length)
 			ws._send(ws.msgQueue.shift(), !0);
 	},
-	message: (ws: WebSocket, message: any, isBinary: boolean) => {
+	message: (ws: WebSocket, message: RecognizedString, isBinary: boolean) => {
 		ws.msgHandler(message, isBinary)
 	},
 	close: (ws: WebSocket) => {
