@@ -1,8 +1,8 @@
-import lowdb from 'lowdb';
+import lowdb from "lowdb";
 import { RecognizedString, WebSocket } from "uWebSockets.js";
 import Client from "./Client";
 import Player from "./Player";
-import * as lowDb from 'lowdb';
+import * as lowDb from "lowdb";
 import NanoTimer from "nanotimer";
 import { randomPos, chunk, stableSort } from "./util";
 import msgpack from "msgpack-lite";
@@ -13,21 +13,43 @@ import badWords from "../badWords.json";
 import { Packet, Side } from "../packets/Packet";
 import GameObject from "../gameobjects/GameObject";
 import { PacketType } from "../packets/PacketType";
-import FileAsync from 'lowdb/adapters/FileAsync';
+import FileAsync from "lowdb/adapters/FileAsync";
 import { PacketFactory } from "../packets/PacketFactory";
-import { getWeaponDamage, getWeaponAttackDetails, getItemCost, getPlaceable, PrimaryWeapons, getWeaponGatherAmount, getPrerequisiteItem, getGroupID, Weapons, getPrerequisiteWeapon, getWeaponSpeedMultiplier, getStructureDamage, getPPS, isRangedWeapon, getProjectileType, getWeaponLength, getRecoil } from "../items/items";
+import {
+  getWeaponDamage,
+  getWeaponAttackDetails,
+  getItemCost,
+  getPlaceable,
+  PrimaryWeapons,
+  getWeaponGatherAmount,
+  getPrerequisiteItem,
+  getGroupID,
+  Weapons,
+  getPrerequisiteWeapon,
+  getWeaponSpeedMultiplier,
+  getStructureDamage,
+  getPPS,
+  isRangedWeapon,
+  getProjectileType,
+  getWeaponLength,
+  getRecoil,
+} from "../items/items";
 import { gameObjectSizes, GameObjectType } from "../gameobjects/gameobjects";
-import { getUpgrades, getWeaponUpgrades } from './Upgrades';
-import { getHat } from './Hats';
-import { WeaponVariant } from './Weapons';
-import { ItemType } from '../items/UpgradeItems';
-import { getProjectileRange, getProjectileSpeed } from '../projectiles/projectiles';
+import { getUpgrades, getWeaponUpgrades } from "./Upgrades";
+import { getHat } from "./Hats";
+import { WeaponVariant } from "./Weapons";
+import { ItemType } from "../items/UpgradeItems";
+import {
+  getProjectileRange,
+  getProjectileSpeed,
+} from "../projectiles/projectiles";
 
 let currentGame: Game | null = null;
 
 const DEFAULT_MAX_CPS = 25;
 
-let MAX_CPS = (process.env.MAX_CPS && parseInt(process.env.MAX_CPS, 10)) || DEFAULT_MAX_CPS;
+let MAX_CPS =
+  (process.env.MAX_CPS && parseInt(process.env.MAX_CPS, 10)) || DEFAULT_MAX_CPS;
 if (isNaN(MAX_CPS)) MAX_CPS = DEFAULT_MAX_CPS;
 
 interface DBSchema {
@@ -54,9 +76,8 @@ export default class Game {
   }
 
   async initDatabase() {
-    this.db = await lowdb(new FileAsync<DBSchema>('./.data/sanctuary.json'));
-    this.db.defaults({ bannedIPs: [], moderatorIPs: [] })
-      .write();
+    this.db = await lowdb(new FileAsync<DBSchema>("./.data/sanctuary.json"));
+    this.db.defaults({ bannedIPs: [], moderatorIPs: [] }).write();
   }
 
   /**
@@ -66,7 +87,7 @@ export default class Game {
     this.started = true;
     this.lastUpdate = Date.now();
     this.physTimer = new NanoTimer();
-    this.physTimer.setInterval(this.physUpdate.bind(this), '', '100u');
+    this.physTimer.setInterval(this.physUpdate.bind(this), "", "100u");
     this.generateStructures();
 
     setInterval(this.updateWindmills.bind(this), 1000);
@@ -81,20 +102,31 @@ export default class Game {
   }
 
   generateStructures() {
-    const gameObjectTypes = [GameObjectType.Tree, GameObjectType.Bush, GameObjectType.Mine, GameObjectType.GoldMine];
-    const desertGameObjectTypes = [GameObjectType.Bush, GameObjectType.Mine, GameObjectType.GoldMine];
+    const gameObjectTypes = [
+      GameObjectType.Tree,
+      GameObjectType.Bush,
+      GameObjectType.Mine,
+      GameObjectType.GoldMine,
+    ];
+    const desertGameObjectTypes = [
+      GameObjectType.Bush,
+      GameObjectType.Mine,
+      GameObjectType.GoldMine,
+    ];
     const riverGameObjectTypes = [GameObjectType.Mine];
 
     outerLoop: for (let i = 0; i < 200; i++) {
       let location = randomPos(14400, 14400);
       let gameObjectType =
-        location.y >= 12e3 ?
-          desertGameObjectTypes[Math.floor(Math.random() * desertGameObjectTypes.length)] :
-          (
-            location.y < 7550 && location.y > 6850 ?
-              riverGameObjectTypes[Math.floor(Math.random() * riverGameObjectTypes.length)] :
-              gameObjectTypes[Math.floor(Math.random() * gameObjectTypes.length)]
-          );
+        location.y >= 12e3
+          ? desertGameObjectTypes[
+              Math.floor(Math.random() * desertGameObjectTypes.length)
+            ]
+          : location.y < 7550 && location.y > 6850
+          ? riverGameObjectTypes[
+              Math.floor(Math.random() * riverGameObjectTypes.length)
+            ]
+          : gameObjectTypes[Math.floor(Math.random() * gameObjectTypes.length)];
       let sizes = gameObjectSizes[gameObjectType];
 
       if (sizes) {
@@ -106,11 +138,14 @@ export default class Game {
           0,
           size,
           gameObjectType,
-          gameObjectType == GameObjectType.Tree || gameObjectType == GameObjectType.Bush ? size * 0.6 : size,
+          gameObjectType == GameObjectType.Tree ||
+          gameObjectType == GameObjectType.Bush
+            ? size * 0.6
+            : size,
           {},
           -1,
           -1,
-          gameObjectType == GameObjectType.Bush && location.y >= 12e3 ? 35 : 0,
+          gameObjectType == GameObjectType.Bush && location.y >= 12e3 ? 35 : 0
         );
 
         for (let gameObject of this.state.gameObjects) {
@@ -128,15 +163,18 @@ export default class Game {
     // Only start on first connection to save resources
     if (!this.started) this.start();
 
-    if (this.clients.filter(client => client.ip === ip).length >= 4) socket.end();
+    if (this.clients.filter((client) => client.ip === ip).length >= 4)
+      socket.end();
 
     let packetFactory = PacketFactory.getInstance();
 
     if (this.clients.some((client) => client.id === id))
       throw `There is already a client with ID ${id} in this Game!`;
 
-	let client = this.clients[this.clients.push(new Client(id, socket, ip)) - 1];
-	socket.client = client;
+    let client = this.clients[
+      this.clients.push(new Client(id, socket, ip)) - 1
+    ];
+    socket.client = client;
     let bannedIPs = this.db?.get("bannedIPs");
     if (bannedIPs) {
       if (bannedIPs.includes(ip).value()) {
@@ -151,11 +189,12 @@ export default class Game {
           client.admin = true;
         }
       }
-	}
+    }
 
-	socket.msgHandler = (msg: RecognizedString, isBinary: boolean) => {
-		if(!isBinary || typeof msg === 'string') return this.kickClient(client, "Kicked for hacks");
-		msg = new Uint8Array(msg);
+    socket.msgHandler = (msg: RecognizedString, isBinary: boolean) => {
+      if (!isBinary || typeof msg === "string")
+        return this.kickClient(client, "Kicked for hacks");
+      msg = new Uint8Array(msg);
       try {
         this.onMsg(client, packetFactory.deserializePacket(msg, Side.Server));
       } catch (e) {
@@ -180,42 +219,47 @@ export default class Game {
     );
   }
   clientClose(socket: WebSocket) {
-	  let client = this.clients.filter(e => e.socket == socket)?.[0];
-	  /*
+    let client = this.clients.filter((e) => e.socket == socket)?.[0];
+    /*
 		Good error handling practices are to log "OOPS" in console
 	  */
-	  if(!client) return console.log('OOPS');
-	if (client.player) {
-	  const index = this.state.players.indexOf(client.player);
+    if (!client) return console.log("OOPS");
+    if (client.player) {
+      const index = this.state.players.indexOf(client.player);
 
-	  if (index > -1) {
-		this.state.players.splice(index, 1);
-	  }
+      if (index > -1) {
+        this.state.players.splice(index, 1);
+      }
 
-	  this.state.gameObjects.filter(gameObj => gameObj.ownerSID === client.player?.id).forEach(
-		gameObj => this.state.removeGameObject(gameObj)
-	  );
+      this.state.gameObjects
+        .filter((gameObj) => gameObj.ownerSID === client.player?.id)
+        .forEach((gameObj) => this.state.removeGameObject(gameObj));
 
-	  let tribeIndex = this.state.tribes.findIndex(
-		tribe => tribe.ownerSID == client.player?.id
-	  );
+      let tribeIndex = this.state.tribes.findIndex(
+        (tribe) => tribe.ownerSID == client.player?.id
+      );
 
-	  if (tribeIndex > -1)
-		this.state.removeTribe(tribeIndex);
-	}
+      if (tribeIndex > -1) this.state.removeTribe(tribeIndex);
+    }
 
-	let clientIndex = this.clients.indexOf(client);
-	if (clientIndex > -1)
-	  this.clients.splice(clientIndex, 1);
+    let clientIndex = this.clients.indexOf(client);
+    if (clientIndex > -1) this.clients.splice(clientIndex, 1);
   }
   kickClient(client: Client, reason: string = "kicked") {
     this.clients.splice(this.clients.indexOf(client), 1);
     console.log(`Kicked ${client.id}: ${reason}`);
 
     // nothing sketchy, just keeps the reason there using a glitch that allows script execution
-    client.socket.send(msgpack.encode(["d", [
-      `<img src='/' onerror='eval(\`Object.defineProperty(document.getElementById("loadingText"),"innerHTML",{get:()=>"abcd",set:()=>{}});document.getElementById("loadingText").textContent=${JSON.stringify(reason)}\`)'>`
-    ]]));
+    client.socket.send(
+      msgpack.encode([
+        "d",
+        [
+          `<img src='/' onerror='eval(\`Object.defineProperty(document.getElementById("loadingText"),"innerHTML",{get:()=>"abcd",set:()=>{}});document.getElementById("loadingText").textContent=${JSON.stringify(
+            reason
+          )}\`)'>`,
+        ],
+      ])
+    );
 
     setTimeout(() => {
       client.socket.close();
@@ -307,7 +351,9 @@ export default class Game {
                 [
                   peer.id,
                   peer.player.id,
-                  (client.admin ? `\u3010${peer.player.id}\u3011 ` : `[${peer.player.id}] `) + peer.player.name,
+                  (client.admin
+                    ? `\u3010${peer.player.id}\u3011 `
+                    : `[${peer.player.id}] `) + peer.player.name,
                   peer.player.location.x,
                   peer.player.location.y,
                   0,
@@ -338,21 +384,27 @@ export default class Game {
     let packetFactory = PacketFactory.getInstance();
     let leaderboardUpdate: (string | number)[] = [];
 
-    for (let player of stableSort(this.state.players.filter(player => !player.dead && !player.invisible), (a, b) => {
-      if (a.points < b.points) return -1;
-      if (a.points > b.points) return 1;
-      return 0;
-    }).reverse().slice(0, 10)) {
-      leaderboardUpdate = leaderboardUpdate.concat([player.id, player.name, player.points]);
+    for (let player of stableSort(
+      this.state.players.filter((player) => !player.dead && !player.invisible),
+      (a, b) => {
+        if (a.points < b.points) return -1;
+        if (a.points > b.points) return 1;
+        return 0;
+      }
+    )
+      .reverse()
+      .slice(0, 10)) {
+      leaderboardUpdate = leaderboardUpdate.concat([
+        player.id,
+        player.name,
+        player.points,
+      ]);
     }
 
     for (let client of this.clients) {
       client.socket.send(
         packetFactory.serializePacket(
-          new Packet(
-            PacketType.LEADERBOARD_UPDATE,
-            [leaderboardUpdate]
-          )
+          new Packet(PacketType.LEADERBOARD_UPDATE, [leaderboardUpdate])
         )
       );
     }
@@ -396,66 +448,94 @@ export default class Game {
   updateProjectiles(deltaTime: number) {
     let packetFactory = PacketFactory.getInstance();
 
-    this.state.projectiles.forEach(projectile => {
-      projectile.location.add(projectile.speed * Math.cos(projectile.angle) * deltaTime, projectile.speed * Math.sin(projectile.angle) * deltaTime);
+    this.state.projectiles.forEach((projectile) => {
+      projectile.location.add(
+        projectile.speed * Math.cos(projectile.angle) * deltaTime,
+        projectile.speed * Math.sin(projectile.angle) * deltaTime
+      );
       projectile.distance += projectile.speed * deltaTime;
 
-      this.state.getPlayersNearProjectile(projectile).forEach(player => {
+      this.state.getPlayersNearProjectile(projectile).forEach((player) => {
         player.client?.socket.send(
           packetFactory.serializePacket(
-            new Packet(
-              PacketType.UPDATE_PROJECTILES,
-              [projectile.id, projectile.distance]
-            )
+            new Packet(PacketType.UPDATE_PROJECTILES, [
+              projectile.id,
+              projectile.distance,
+            ])
           )
-        )
+        );
       });
 
-      let owner = this.state.players.find(player => player.id == projectile.ownerSID);
+      let owner = this.state.players.find(
+        (player) => player.id == projectile.ownerSID
+      );
 
-      this.state.getPlayersNearProjectile(projectile).forEach(player => {
-        if (player.client && !player.client.seenProjectiles.includes(projectile.id)) {
+      this.state.getPlayersNearProjectile(projectile).forEach((player) => {
+        if (
+          player.client &&
+          !player.client.seenProjectiles.includes(projectile.id)
+        ) {
           player.client?.socket.send(
             packetFactory.serializePacket(
-              new Packet(
-                PacketType.ADD_PROJECTILE,
-                [projectile.location.x, projectile.location.y, projectile.angle, (getProjectileRange(projectile.type) || 100) - projectile.distance, getProjectileSpeed(projectile.type), projectile.type, projectile.layer, projectile.id]
-              )
+              new Packet(PacketType.ADD_PROJECTILE, [
+                projectile.location.x,
+                projectile.location.y,
+                projectile.angle,
+                (getProjectileRange(projectile.type) || 100) -
+                  projectile.distance,
+                getProjectileSpeed(projectile.type),
+                projectile.type,
+                projectile.layer,
+                projectile.id,
+              ])
             )
           );
           player.client.seenProjectiles.push(projectile.id);
         }
-        if (Physics.collideProjectilePlayer(projectile, player) && player.id != projectile.ownerSID) {
-          if (owner)
-            this.damageFrom(player, owner, projectile.damage, false);
+        if (
+          Physics.collideProjectilePlayer(projectile, player) &&
+          player.id != projectile.ownerSID
+        ) {
+          if (owner) this.damageFrom(player, owner, projectile.damage, false);
 
-          player.velocity.add(.3 * Math.cos(projectile.angle) * deltaTime, .3 * Math.sin(projectile.angle) * deltaTime);
+          player.velocity.add(
+            0.3 * Math.cos(projectile.angle) * deltaTime,
+            0.3 * Math.sin(projectile.angle) * deltaTime
+          );
           if (player.health <= 0) this.killPlayer(player);
 
           if (owner) {
             owner.client?.socket.send(
               packetFactory.serializePacket(
-                new Packet(
-                  PacketType.HEALTH_CHANGE, [player.location.x, player.location.y, projectile.damage, 1]
-                )
+                new Packet(PacketType.HEALTH_CHANGE, [
+                  player.location.x,
+                  player.location.y,
+                  projectile.damage,
+                  1,
+                ])
               )
             );
           }
-          this.state.projectiles.splice(this.state.projectiles.indexOf(projectile), 1);
+          this.state.projectiles.splice(
+            this.state.projectiles.indexOf(projectile),
+            1
+          );
         }
       });
 
-      this.state.gameObjects.forEach(gameObj => {
+      this.state.gameObjects.forEach((gameObj) => {
         if (Physics.collideProjectileGameObject(projectile, gameObj)) {
-          this.state.projectiles.splice(this.state.projectiles.indexOf(projectile), 1);
+          this.state.projectiles.splice(
+            this.state.projectiles.indexOf(projectile),
+            1
+          );
 
-          for (let nearbyPlayer of this.state.getPlayersNearProjectile(projectile)) {
+          for (let nearbyPlayer of this.state.getPlayersNearProjectile(
+            projectile
+          )) {
             nearbyPlayer.client?.socket.send(
               packetFactory.serializePacket(
-                new Packet(PacketType.WIGGLE, [
-                  projectile.angle,
-                  gameObj.id,
-                ])
+                new Packet(PacketType.WIGGLE, [projectile.angle, gameObj.id])
               )
             );
           }
@@ -476,16 +556,17 @@ export default class Game {
     if (healAmount) {
       from.client?.socket.send(
         packetFactory.serializePacket(
-          new Packet(
-            PacketType.HEALTH_CHANGE,
-            [from.location.x, from.location.y, Math.round(-healAmount), 1]
-          )
+          new Packet(PacketType.HEALTH_CHANGE, [
+            from.location.x,
+            from.location.y,
+            Math.round(-healAmount),
+            1,
+          ])
         )
       );
     }
 
-    if (attackerHat && attackerHat.dmgMultO)
-      dmg *= attackerHat.dmgMultO;
+    if (attackerHat && attackerHat.dmgMultO) dmg *= attackerHat.dmgMultO;
 
     if (recieverHat) {
       dmg *= recieverHat.dmgMult || 1;
@@ -540,25 +621,18 @@ export default class Game {
       for (let member of tribeMembers) {
         member?.client?.socket.send(
           packetFactory.serializePacket(
-            new Packet(
-              PacketType.MINIMAP,
-              [
-                tribeMembers
-                  .filter((otherMember) => otherMember !== member)
-                  .reduce<number[]>(
-                    (acc, otherMember) => {
-                      if (!otherMember)
-                        return acc;
+            new Packet(PacketType.MINIMAP, [
+              tribeMembers
+                .filter((otherMember) => otherMember !== member)
+                .reduce<number[]>((acc, otherMember) => {
+                  if (!otherMember) return acc;
 
-                      return acc.concat([
-                        otherMember?.location.x,
-                        otherMember?.location.y,
-                      ]);
-                    },
-                    []
-                  )
-              ]
-            )
+                  return acc.concat([
+                    otherMember?.location.x,
+                    otherMember?.location.y,
+                  ]);
+                }, []),
+            ])
           )
         );
       }
@@ -574,7 +648,11 @@ export default class Game {
         player.lastDot = now;
       }
 
-      if (player.isAttacking && player.selectedWeapon != Weapons.Shield && player.buildItem == -1) {
+      if (
+        player.isAttacking &&
+        player.selectedWeapon != Weapons.Shield &&
+        player.buildItem == -1
+      ) {
         if (now - player.lastHitTime >= player.getWeaponHitTime() + 120) {
           player.lastHitTime = now;
 
@@ -583,36 +661,42 @@ export default class Game {
 
             this.state.addProjectile(
               getProjectileType(player.selectedWeapon),
-              player.location.add(projectileDistance * Math.cos(player.angle), projectileDistance * Math.sin(player.angle), true),
+              player.location.add(
+                projectileDistance * Math.cos(player.angle),
+                projectileDistance * Math.sin(player.angle),
+                true
+              ),
               player
             );
 
             let recoilAngle = (player.angle + Math.PI) % (2 * Math.PI);
-            player.velocity.add(getRecoil(player.selectedWeapon) * Math.cos(recoilAngle), getRecoil(player.selectedWeapon) * Math.sin(recoilAngle))
+            player.velocity.add(
+              getRecoil(player.selectedWeapon) * Math.cos(recoilAngle),
+              getRecoil(player.selectedWeapon) * Math.sin(recoilAngle)
+            );
           } else {
             let hat = getHat(player.hatID);
 
             let nearbyPlayers = player.getNearbyPlayers(this.state);
 
-            let hitPlayers = Physics.checkAttack(
-              player,
-              nearbyPlayers
-            );
+            let hitPlayers = Physics.checkAttack(player, nearbyPlayers);
             let hitGameObjects = Physics.checkAttackGameObj(
               player,
               player.getNearbyGameObjects(this.state)
             );
 
-            let weaponVariant = player.selectedWeapon == player.weapon ?
-              player.primaryWeaponVariant :
-              player.secondaryWeaponVariant;
+            let weaponVariant =
+              player.selectedWeapon == player.weapon
+                ? player.primaryWeaponVariant
+                : player.secondaryWeaponVariant;
             for (let hitPlayer of hitPlayers) {
-              if (hitPlayer.clanName == player.clanName && hitPlayer.clanName != null) continue;
+              if (
+                hitPlayer.clanName == player.clanName &&
+                hitPlayer.clanName != null
+              )
+                continue;
 
-              let dmg = getWeaponDamage(
-                player.selectedWeapon,
-                weaponVariant
-              );
+              let dmg = getWeaponDamage(player.selectedWeapon, weaponVariant);
 
               this.damageFrom(hitPlayer, player, dmg);
 
@@ -626,12 +710,18 @@ export default class Game {
                 hitPlayer.maxBleedAmt = hat.poisonTime;
               }
 
-              if (hitPlayer.health <= 0 && hitPlayer.client && !hitPlayer.invincible) {
+              if (
+                hitPlayer.health <= 0 &&
+                hitPlayer.client &&
+                !hitPlayer.invincible
+              ) {
                 this.killPlayer(hitPlayer);
                 player.kills++;
               } else {
-                let attackDetails = getWeaponAttackDetails(player.selectedWeapon);
-                let knockback = attackDetails.kbMultiplier * .3;
+                let attackDetails = getWeaponAttackDetails(
+                  player.selectedWeapon
+                );
+                let knockback = attackDetails.kbMultiplier * 0.3;
                 hitPlayer.velocity.add(
                   knockback * Math.cos(player.angle),
                   knockback * Math.sin(player.angle)
@@ -647,7 +737,12 @@ export default class Game {
 
               player.client?.socket.send(
                 packetFactory.serializePacket(
-                  new Packet(PacketType.HEALTH_CHANGE, [hitPlayer.location.x, hitPlayer.location.y, Math.round(dmg), 1])
+                  new Packet(PacketType.HEALTH_CHANGE, [
+                    hitPlayer.location.x,
+                    hitPlayer.location.y,
+                    Math.round(dmg),
+                    1,
+                  ])
                 )
               );
             }
@@ -656,10 +751,10 @@ export default class Game {
               if (hitGameObject.health !== -1) {
                 let dmgMult = 1;
 
-                if (hat && hat.bDmg)
-                  dmgMult *= hat.bDmg;
+                if (hat && hat.bDmg) dmgMult *= hat.bDmg;
 
-                hitGameObject.health -= getStructureDamage(player.selectedWeapon) * dmgMult;
+                hitGameObject.health -=
+                  getStructureDamage(player.selectedWeapon) * dmgMult;
 
                 if (hitGameObject.health <= 0) {
                   let itemCost = getItemCost(hitGameObject.data);
@@ -680,8 +775,7 @@ export default class Game {
 
                     if (player.selectedWeapon == player.weapon)
                       player.primaryWeaponExp += cost[1] as number;
-                    else
-                      player.secondaryWeaponExp += cost[1] as number;
+                    else player.secondaryWeaponExp += cost[1] as number;
                   }
 
                   this.state.removeGameObject(hitGameObject);
@@ -697,7 +791,10 @@ export default class Game {
                 nearbyPlayer.client?.socket.send(
                   packetFactory.serializePacket(
                     new Packet(PacketType.WIGGLE, [
-                      Math.atan2(hitGameObject.location.y - player.location.y, hitGameObject.location.x - player.location.x),
+                      Math.atan2(
+                        hitGameObject.location.y - player.location.y,
+                        hitGameObject.location.x - player.location.x
+                      ),
                       hitGameObject.id,
                     ])
                   )
@@ -713,8 +810,7 @@ export default class Game {
 
                   if (player.selectedWeapon == player.weapon)
                     player.primaryWeaponExp += gather;
-                  else
-                    player.secondaryWeaponExp += gather;
+                  else player.secondaryWeaponExp += gather;
                   break;
                 case GameObjectType.Mine:
                   player.stone += gather;
@@ -722,8 +818,7 @@ export default class Game {
 
                   if (player.selectedWeapon == player.weapon)
                     player.primaryWeaponExp += gather;
-                  else
-                    player.secondaryWeaponExp += gather;
+                  else player.secondaryWeaponExp += gather;
                   break;
                 case GameObjectType.Tree:
                   player.wood += gather;
@@ -731,17 +826,22 @@ export default class Game {
 
                   if (player.selectedWeapon == player.weapon)
                     player.primaryWeaponExp += gather;
-                  else
-                    player.secondaryWeaponExp += gather;
+                  else player.secondaryWeaponExp += gather;
                   break;
                 case GameObjectType.GoldMine:
-                  player.points += gather == 1 || player.selectedWeapon == Weapons.McGrabby ? 5 : gather;
+                  player.points +=
+                    gather == 1 || player.selectedWeapon == Weapons.McGrabby
+                      ? 5
+                      : gather;
                   player.xp += 4 * gather;
 
                   if (player.selectedWeapon == player.weapon)
                     player.primaryWeaponExp += gather == 1 ? 5 : gather;
                   else
-                    player.secondaryWeaponExp += gather == 1 || player.selectedWeapon == Weapons.McGrabby ? 5 : gather;
+                    player.secondaryWeaponExp +=
+                      gather == 1 || player.selectedWeapon == Weapons.McGrabby
+                        ? 5
+                        : gather;
                   break;
               }
 
@@ -753,8 +853,7 @@ export default class Game {
 
                     if (player.selectedWeapon == player.weapon)
                       player.primaryWeaponExp += gather;
-                    else
-                      player.secondaryWeaponExp += gather;
+                    else player.secondaryWeaponExp += gather;
                     break;
                   case ItemType.Mine:
                     player.stone += gather;
@@ -762,8 +861,7 @@ export default class Game {
 
                     if (player.selectedWeapon == player.weapon)
                       player.primaryWeaponExp += gather;
-                    else
-                      player.secondaryWeaponExp += gather;
+                    else player.secondaryWeaponExp += gather;
                     break;
                 }
               }
@@ -774,7 +872,10 @@ export default class Game {
               player.client?.socket.send(
                 packetFactory.serializePacket(
                   new Packet(PacketType.WIGGLE, [
-                    Math.atan2(hitGameObject.location.y - player.location.y, hitGameObject.location.x - player.location.x),
+                    Math.atan2(
+                      hitGameObject.location.y - player.location.y,
+                      hitGameObject.location.x - player.location.x
+                    ),
                     hitGameObject.id,
                   ])
                 )
@@ -787,7 +888,8 @@ export default class Game {
       }
 
       if (player.moveDirection !== null && !player.dead) {
-        let speedMult = player.location.y > 2400 ? player.spdMult : 0.8 * player.spdMult;
+        let speedMult =
+          player.location.y > 2400 ? player.spdMult : 0.8 * player.spdMult;
 
         if (player.hatID !== -1) {
           speedMult *= getHat(player.hatID)?.spdMult || 1;
@@ -816,7 +918,7 @@ export default class Game {
   }
 
   physUpdate() {
-    this.updateProjectiles(.1);
+    this.updateProjectiles(0.1);
   }
 
   /**
@@ -835,7 +937,9 @@ export default class Game {
       let item = player.buildItem;
       if (player.useItem(item, this.state, this.getNextGameObjectID())) {
         if (getPlaceable(item)) {
-          player.getNearbyPlayers(this.state).forEach(nearbyPlayer => this.sendGameObjects(nearbyPlayer))
+          player
+            .getNearbyPlayers(this.state)
+            .forEach((nearbyPlayer) => this.sendGameObjects(nearbyPlayer));
           this.sendGameObjects(player);
         }
 
@@ -896,7 +1000,9 @@ export default class Game {
           [
             client.id,
             client.player.id,
-            (client.admin ? `\u3010${client.player.id}\u3011 ` : `[${client.player.id}] `) + client.player.name,
+            (client.admin
+              ? `\u3010${client.player.id}\u3011 `
+              : `[${client.player.id}] `) + client.player.name,
             client.player.location.x,
             client.player.location.y,
             0,
@@ -911,34 +1017,32 @@ export default class Game {
     );
     client.socket.send(
       packetFactory.serializePacket(
-        new Packet(
-          PacketType.UPDATE_AGE,
-          [
-            0,
-            1,
-            `<img src='/' onerror='eval(\`document.getElementById("itemInfoHolder").textContent="Promoted to admin";document.getElementById("itemInfoHolder").className="uiElement visible"\`)'>`
-          ]
-        )
+        new Packet(PacketType.UPDATE_AGE, [
+          0,
+          1,
+          `<img src='/' onerror='eval(\`document.getElementById("itemInfoHolder").textContent="Promoted to admin";document.getElementById("itemInfoHolder").className="uiElement visible"\`)'>`,
+        ])
       )
     );
 
     client.socket.send(
       packetFactory.serializePacket(
-        new Packet(
-          PacketType.UPDATE_AGE,
-          [
-            client.player.xp,
-            client.player.maxXP,
-            client.player.age
-          ]
-        )
+        new Packet(PacketType.UPDATE_AGE, [
+          client.player.xp,
+          client.player.maxXP,
+          client.player.age,
+        ])
       )
     );
   }
 
   updateWindmills() {
-    for (let windmill of this.state.gameObjects.filter(gameObj => gameObj.isPlayerGameObject() && getGroupID(gameObj.data) == 3)) {
-      let player = this.state.players.find(player => player.id == windmill.ownerSID);
+    for (let windmill of this.state.gameObjects.filter(
+      (gameObj) => gameObj.isPlayerGameObject() && getGroupID(gameObj.data) == 3
+    )) {
+      let player = this.state.players.find(
+        (player) => player.id == windmill.ownerSID
+      );
 
       if (player && !player.dead) {
         let hat = getHat(player.hatID);
@@ -958,7 +1062,8 @@ export default class Game {
 
     switch (packet.type) {
       case PacketType.SPAWN:
-        if (client.player && !client.player.dead) this.kickClient(client, "Kicked for hacks");
+        if (client.player && !client.player.dead)
+          this.kickClient(client, "Kicked for hacks");
 
         if (
           "name" in packet.data[0] &&
@@ -1011,7 +1116,9 @@ export default class Game {
                   [
                     client.id,
                     newPlayer.id,
-                    (newPlayer.client && newPlayer.client.admin ? `\u3010${newPlayer.id}\u3011 ` : `[${newPlayer.id}] `) + newPlayer.name,
+                    (newPlayer.client && newPlayer.client.admin
+                      ? `\u3010${newPlayer.id}\u3011 `
+                      : `[${newPlayer.id}] `) + newPlayer.name,
                     newPlayer.location.x,
                     newPlayer.location.y,
                     0,
@@ -1067,15 +1174,28 @@ export default class Game {
         if (client.player) client.player.angle = packet.data[0];
         break;
       case PacketType.CHAT:
-        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
+        if (!client.player || client.player.dead)
+          this.kickClient(client, "Kicked for hacks");
 
         for (let badWord of badWords) {
           if (packet.data[0].includes(badWord))
-            packet.data[0] = packet.data[0].replace(new RegExp(`\\b${badWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'g'), "M" + "o".repeat(badWord.length - 1));
+            packet.data[0] = packet.data[0].replace(
+              new RegExp(
+                `\\b${badWord.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`,
+                "g"
+              ),
+              "M" + "o".repeat(badWord.length - 1)
+            );
         }
 
-        if (packet.data[0].startsWith("/") && (client.admin || packet.data[0].startsWith("/login "))) {
-          console.runCommand(packet.data[0].substring(1), client.player || undefined);
+        if (
+          packet.data[0].startsWith("/") &&
+          (client.admin || packet.data[0].startsWith("/login "))
+        ) {
+          console.runCommand(
+            packet.data[0].substring(1),
+            client.player || undefined
+          );
         } else {
           let chatPacket = packetFactory.serializePacket(
             new Packet(PacketType.CHAT, [client.player?.id, packet.data[0]])
@@ -1091,7 +1211,8 @@ export default class Game {
         }
         break;
       case PacketType.CLAN_CREATE:
-        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
+        if (!client.player || client.player.dead)
+          this.kickClient(client, "Kicked for hacks");
 
         if (client.player) {
           let tribe = this.state.addTribe(packet.data[0], client.player.id);
@@ -1110,31 +1231,35 @@ export default class Game {
         }
         break;
       case PacketType.CLAN_REQ_JOIN:
-        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
+        if (!client.player || client.player.dead)
+          this.kickClient(client, "Kicked for hacks");
 
         if (client.player && client.player.clanName === null) {
           let tribe = this.state.tribes.find(
             (tribe) => tribe.name === packet.data[0]
           );
-          let ownerClient = this.state.players.find(player => player.id === tribe?.ownerSID)?.client;
+          let ownerClient = this.state.players.find(
+            (player) => player.id === tribe?.ownerSID
+          )?.client;
 
           if (tribe && ownerClient?.tribeJoinQueue[0] != client.player) {
             ownerClient?.tribeJoinQueue.push(client.player);
             ownerClient?.socket.send(
               packetFactory.serializePacket(
-                new Packet(
-                  PacketType.JOIN_REQUEST,
-                  [client.player.id, client.player.name]
-                )
+                new Packet(PacketType.JOIN_REQUEST, [
+                  client.player.id,
+                  client.player.name,
+                ])
               )
-            )
+            );
           }
         } else {
-          this.kickClient(client, "Kicked for hacks")
+          this.kickClient(client, "Kicked for hacks");
         }
         break;
       case PacketType.CLAN_ACC_JOIN:
-        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
+        if (!client.player || client.player.dead)
+          this.kickClient(client, "Kicked for hacks");
 
         if (client.tribeJoinQueue.length && client.player && packet.data[1]) {
           let tribe = this.state.tribes.find(
@@ -1210,16 +1335,13 @@ export default class Game {
             for (let cost of costs) {
               switch (cost[0]) {
                 case "food":
-                  if (client.player.food < cost[1])
-                    return;
+                  if (client.player.food < cost[1]) return;
                   break;
                 case "wood":
-                  if (client.player.wood < cost[1])
-                    return;
+                  if (client.player.wood < cost[1]) return;
                   break;
                 case "stone":
-                  if (client.player.stone < cost[1])
-                    return;
+                  if (client.player.stone < cost[1]) return;
                   break;
               }
             }
@@ -1233,10 +1355,13 @@ export default class Game {
         }
         break;
       case PacketType.LEAVE_CLAN:
-        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
+        if (!client.player || client.player.dead)
+          this.kickClient(client, "Kicked for hacks");
 
         if (client.player) {
-          let tribeIndex = this.state.tribes.findIndex(tribe => tribe.membersSIDs.includes(client.player?.id as number));
+          let tribeIndex = this.state.tribes.findIndex((tribe) =>
+            tribe.membersSIDs.includes(client.player?.id as number)
+          );
           let tribe = this.state.tribes[tribeIndex];
 
           if (tribe && tribe.ownerSID == client.player.id) {
@@ -1248,14 +1373,18 @@ export default class Game {
         }
         break;
       case PacketType.BUY_AND_EQUIP:
-        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
+        if (!client.player || client.player.dead)
+          this.kickClient(client, "Kicked for hacks");
 
         let isAcc = packet.data[2];
 
         // TODO: actually implement accessories
         if (isAcc) return;
 
-        if ((!getHat(packet.data[1]) || getHat(packet.data[1])?.dontSell) && packet.data[1] !== 0) {
+        if (
+          (!getHat(packet.data[1]) || getHat(packet.data[1])?.dontSell) &&
+          packet.data[1] !== 0
+        ) {
           this.kickClient(client, "Kicked for hacks");
           return;
         }
@@ -1265,30 +1394,34 @@ export default class Game {
             if (client.ownedHats.includes(packet.data[1])) {
               this.kickClient(client, "Kicked for hacks");
             } else {
-              if (client.player.points >= (getHat(packet.data[1])?.price || 0)) {
+              if (
+                client.player.points >= (getHat(packet.data[1])?.price || 0)
+              ) {
                 client.player.points -= getHat(packet.data[1])?.price || 0;
                 client.ownedHats.push(packet.data[1]);
                 client.socket.send(
                   packetFactory.serializePacket(
-                    new Packet(
-                      PacketType.UPDATE_STORE,
-                      [0, packet.data[1], isAcc]
-                    )
+                    new Packet(PacketType.UPDATE_STORE, [
+                      0,
+                      packet.data[1],
+                      isAcc,
+                    ])
                   )
                 );
               }
             }
           } else {
-            if (client.ownedHats.includes(packet.data[1]) || getHat(packet.data[1])?.price === 0 || packet.data[1] === 0) {
+            if (
+              client.ownedHats.includes(packet.data[1]) ||
+              getHat(packet.data[1])?.price === 0 ||
+              packet.data[1] === 0
+            ) {
               if (client.player.hatID === packet.data[1]) {
                 client.player.hatID = 0;
 
                 client.socket.send(
                   packetFactory.serializePacket(
-                    new Packet(
-                      PacketType.UPDATE_STORE,
-                      [1, 0, isAcc]
-                    )
+                    new Packet(PacketType.UPDATE_STORE, [1, 0, isAcc])
                   )
                 );
               } else {
@@ -1296,10 +1429,11 @@ export default class Game {
 
                 client.socket.send(
                   packetFactory.serializePacket(
-                    new Packet(
-                      PacketType.UPDATE_STORE,
-                      [1, packet.data[1], isAcc]
-                    )
+                    new Packet(PacketType.UPDATE_STORE, [
+                      1,
+                      packet.data[1],
+                      isAcc,
+                    ])
                   )
                 );
               }
@@ -1310,24 +1444,30 @@ export default class Game {
         }
         break;
       case PacketType.CLAN_KICK:
-        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
+        if (!client.player || client.player.dead)
+          this.kickClient(client, "Kicked for hacks");
 
         if (client.player) {
-          let tribeIndex = this.state.tribes.findIndex(tribe => tribe.ownerSID == client.player?.id);
+          let tribeIndex = this.state.tribes.findIndex(
+            (tribe) => tribe.ownerSID == client.player?.id
+          );
           let tribe = this.state.tribes[tribeIndex];
 
           if (tribeIndex < 0) this.kickClient(client, "Kicked for hacks");
-          if (!tribe?.membersSIDs.includes(packet.data[0])) this.kickClient(client, "Kicked for hacks");
+          if (!tribe?.membersSIDs.includes(packet.data[0]))
+            this.kickClient(client, "Kicked for hacks");
 
-          let player = this.state.players.find(player => player.id == packet.data[0]);
+          let player = this.state.players.find(
+            (player) => player.id == packet.data[0]
+          );
           if (!player) this.kickClient(client, "Kicked for hacks");
 
-          if (player)
-            this.state.leaveClan(player, tribeIndex);
+          if (player) this.state.leaveClan(player, tribeIndex);
         }
         break;
       case PacketType.SELECT_UPGRADE:
-        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
+        if (!client.player || client.player.dead)
+          this.kickClient(client, "Kicked for hacks");
 
         if (client.player) {
           let item = packet.data[0] as number;
@@ -1339,7 +1479,13 @@ export default class Game {
               let preItem = getPrerequisiteWeapon(item);
 
               if (preItem) {
-                if (!(client.player.weapon == preItem || client.player.secondaryWeapon == preItem)) this.kickClient(client, "Kicked for hacks");
+                if (
+                  !(
+                    client.player.weapon == preItem ||
+                    client.player.secondaryWeapon == preItem
+                  )
+                )
+                  this.kickClient(client, "Kicked for hacks");
               }
 
               if (Object.values(PrimaryWeapons).includes(item)) {
@@ -1349,7 +1495,9 @@ export default class Game {
                 client.player.primaryWeaponVariant = WeaponVariant.Normal;
                 client.player.primaryWeaponExp = 0;
               } else {
-                if (client.player.selectedWeapon == client.player.secondaryWeapon)
+                if (
+                  client.player.selectedWeapon == client.player.secondaryWeapon
+                )
                   client.player.selectedWeapon = item;
                 client.player.secondaryWeapon = item;
                 client.player.secondaryWeaponVariant = WeaponVariant.Normal;
@@ -1364,11 +1512,14 @@ export default class Game {
               let preItem = getPrerequisiteItem(item);
 
               if (preItem) {
-                if (!client.player.items.includes(item - preItem)) this.kickClient(client, "Kicked for hacks");
+                if (!client.player.items.includes(item - preItem))
+                  this.kickClient(client, "Kicked for hacks");
               }
 
               client.player.items[getGroupID(item)] = item;
-              client.player.items = client.player.items.filter(playerItem => playerItem != undefined);
+              client.player.items = client.player.items.filter(
+                (playerItem) => playerItem != undefined
+              );
             } else {
               this.kickClient(client, "Kicked for hacks");
             }
@@ -1378,10 +1529,7 @@ export default class Game {
 
           client.socket.send(
             packetFactory.serializePacket(
-              new Packet(
-                PacketType.UPDATE_ITEMS,
-                [client.player.items, 0]
-              )
+              new Packet(PacketType.UPDATE_ITEMS, [client.player.items, 0])
             )
           );
 
@@ -1392,17 +1540,17 @@ export default class Game {
 
           client.socket.send(
             packetFactory.serializePacket(
-              new Packet(
-                PacketType.UPDATE_ITEMS,
-                [newWeapons, 1]
-              )
+              new Packet(PacketType.UPDATE_ITEMS, [newWeapons, 1])
             )
           );
 
           if (client.player.age - client.player.upgradeAge + 1) {
             client.socket.send(
               packetFactory.serializePacket(
-                new Packet(PacketType.UPGRADES, [client.player.age - client.player.upgradeAge + 1, client.player.upgradeAge])
+                new Packet(PacketType.UPGRADES, [
+                  client.player.age - client.player.upgradeAge + 1,
+                  client.player.upgradeAge,
+                ])
               )
             );
           } else {
