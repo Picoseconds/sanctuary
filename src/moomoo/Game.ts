@@ -220,10 +220,7 @@ export default class Game {
   }
   clientClose(socket: WebSocket) {
     let client = this.clients.filter((e) => e.socket == socket)?.[0];
-    /*
-		Good error handling practices are to log "OOPS" in console
-	  */
-    if (!client) return console.log("OOPS");
+    if (!client) return;
     if (client.player) {
       const index = this.state.players.indexOf(client.player);
 
