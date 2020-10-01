@@ -7,7 +7,7 @@ See [Issue #16](https://github.com/Picoseconds/sanctuary/issues/16) for a list o
 ## Getting started
 1. Clone the repo
 ```
-git clone https://github.com/Picoseconds/sanctuary
+git clone https://github.com/Picoseconds/sanctuary.git
 ```
 2. Compile with `npm run build` **OR** `yarn build` depending on your package manager of choice.
 3. Run the server with `npm start`/`yarn start`
