@@ -38,7 +38,9 @@ const Weapons = {
 type Weapons = PrimaryWeapons | SecondaryWeapons
 
 function getHitTime(weapon: Weapons) {
-  return weapons[weapon].speed || -1;
+  let speed = weapons[weapon].speed || -1;
+  if (speed != -1) speed += 150;
+  return speed;
 }
 
 function isRangedWeapon(weapon: Weapons) {
