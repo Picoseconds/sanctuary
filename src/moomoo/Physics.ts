@@ -21,11 +21,12 @@ function collideRectangles(x1: number, y1: number, w1: number, x2: number, y2: n
 }
 
 function moveTowards(player: Player, angle: number, speed: number, deltaTime: number, state: GameState) {
-  tryMovePlayer(player,
-    deltaTime / 170,
-    Math.cos(angle) * speed * 60, Math.sin(angle) * speed * 60,
+  /* tryMovePlayer(player,
+    deltaTime,
+    Math.cos(angle) * speed * 0.1528, Math.sin(angle) * speed * 0.1528,
     state
-  );
+  ); */
+  player.velocity.add(Math.cos(angle) * speed * .0016 * deltaTime, Math.sin(angle) * speed * .0016 * deltaTime);
 }
 
 /**
@@ -123,6 +124,21 @@ function tryMovePlayer(player: Player, delta: number, xVel: number, yVel: number
   player.inTrap = inTrap;
   if (inTrap) return;
 
+  // River
+  if (player.location.y > 6850 && player.location.y < 7550) {
+    if (getHat(player.hatID)?.watrImm) {
+      xVel *= .75;
+      yVel *= .75;
+
+      player.velocity.add(0.0011 * 0.4 * delta * (1 / .75), 0);
+    } else {
+      xVel *= .33;
+      yVel *= .33;
+
+      player.velocity.add(0.0011 * delta * (1 / .33), 0);
+    }
+  }
+
   newLocation.clamp(new Vec2(0 + 35, 0 + 35), new Vec2(14400 - 35, 14400 - 35));
   player.location = newLocation.add(delta * xVel, delta * yVel);
 }
@@ -133,6 +149,7 @@ function movePlayer(player: Player, delta: number, state: GameState) {
   if (player.velocity.x || player.velocity.y) {
     player.velocity = player.velocity.multiply(0.993 ** delta, 0.993 ** delta);
   }
+
   for (let p of player.getNearbyPlayers(state)) {
     if (collideCircles(p.location, 30, player.location, 30)) {
       let dis = player.location.distance(p.location);
