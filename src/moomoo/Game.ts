@@ -839,9 +839,12 @@ export default class Game {
    * A manual attack
    * @param player the player doing the attacking
    */
-  normalAttack(player: Player) {
+  normalAttack(player: Player, angle: number | undefined) {
+		player.angle = angle || player.angle;
+
     if (player.buildItem != -1) {
-      let item = player.buildItem;
+			let item = player.buildItem;
+
       if (player.useItem(item, this.state, this.getNextGameObjectID())) {
         if (getPlaceable(item)) {
           player.getNearbyPlayers(this.state).forEach(nearbyPlayer => this.sendGameObjects(nearbyPlayer))
@@ -1057,7 +1060,7 @@ export default class Game {
 
             client.lastAttackTime = Date.now();
 
-            this.normalAttack(client.player);
+            this.normalAttack(client.player, packet.data[1]);
           } else {
             client.player.isAttacking = false;
           }
