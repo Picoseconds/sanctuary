@@ -84,3 +84,7 @@ Reports the amount of currently connected clients. Output takes the following fo
   'message': string | undefined
 }
 ```
+
+**Still have questions? Refer to:**
+
+https://github.com/CorruptedAI/sanctuary/blob/master/FAQ.md
