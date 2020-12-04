@@ -2,10 +2,7 @@
 
 ***1. "Where can I run this server? (besides my computer)"***
 
-Glitch is probably the easiest way to host one of these servers. I recommend disabling projectiles though because it's incredibly laggy. You can also use Repl.it, 
-as it's pretty stable. If you want to use glitch, fork this repo and then import it on glitch. Configure the .env file and then you should be fine. If the server 
-doesn't run open the terminal in the glitch project and follow the steps provided in the readme file. Then edit the sanctuary.user.js websocket constructor to conform 
-to your glitch project name (not in the project itself though)
+Glitch is probably the easiest way to host one of these servers. I recommend disabling projectiles because it's they create lag and can cause memory leaks on certain providers if you are not careful. You can also use Repl.it, as it's pretty stable. If you want to use glitch, fork this repo and then import it on glitch. Configure the .env file and then you should be fine. If the server doesn't run open the terminal in the glitch project and follow the steps provided in the readme file. Then edit the sanctuary.user.js websocket constructor to conform to your glitch project name (not in the project itself though)
 
 ***2. "How do I connect to my server?" ***
 
