@@ -1,4 +1,4 @@
-### This file lists frequently asked questions and (hopefully) resolves them. 
+### This file lists frequently asked questions and resolves them (hopefully) 
 
 ***1. "Where can I run this server? (besides my computer)"***
 
