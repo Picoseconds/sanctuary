@@ -6,7 +6,7 @@ Glitch is probably the easiest way to host one of these servers. It is recommend
 
 ***2. "How do I connect to my server?"***
 
-You may connect to your server by modifying and injecting [sanctuary.user.js](https://github.com/Picoseconds/sanctuary/blob/master/sanctuary.user.js). Edit the websocket constructor to conform to your glitch project name.
+You may connect to your server by modifying and injecting [sanctuary.user.js](https://github.com/Picoseconds/sanctuary/blob/master/sanctuary.user.js). Edit the websocket constructor to conform to your glitch project name. (not in the project itself though)
 
 
 **Example A:**
