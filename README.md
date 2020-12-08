@@ -85,13 +85,13 @@ Reports the amount of currently connected clients. Output takes the following fo
 }
 ```
 
-### Helpful Resource(s):
+### Frequently Asked Questions:
 
 <div>
 
     
 
-|[FAQ](https://github.com/CorruptedAI/sanctuary/blob/master/FAQ.md) |
+See |[FAQ.md](https://github.com/Picoseconds/sanctuary/blob/master/FAQ.md) |
 | :---: |
 
 </div>
