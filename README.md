@@ -92,6 +92,6 @@ Reports the amount of currently connected clients. Output takes the following fo
     
 
 See |[FAQ.md](https://github.com/Picoseconds/sanctuary/blob/master/FAQ.md) |
-| :---: |
+
 
 </div>
