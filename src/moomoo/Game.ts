@@ -645,12 +645,8 @@ export default class Game {
         player.lastDot = now;
       }
 
-      if (
-        player.isAttacking &&
-        player.selectedWeapon != Weapons.Shield &&
-        player.buildItem == -1
-      ) {
-        if (now - player.lastHitTime >= player.getWeaponHitTime() + 120) {
+      if (player.isAttacking && player.selectedWeapon != Weapons.Shield && player.buildItem == -1) {
+        if (now - player.lastHitTime >= player.getWeaponHitTime()) {
           player.lastHitTime = now;
 
           if (isRangedWeapon(player.selectedWeapon)) {
