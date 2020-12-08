@@ -1,4 +1,4 @@
-import WebSocket from "ws";
+import { WebSocket } from "uWebSockets.js";
 import Player from "./Player";
 
 export default class Client {

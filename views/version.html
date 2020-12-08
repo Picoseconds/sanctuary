@@ -50,19 +50,6 @@
         transform: translate(-50%, -50%) scale(1.1);
       }
     </style>
-
-    <script>
-      window.onload = () => {
-        let uptimeElem = document.getElementById("uptime");
-        let uptimeSocket = new WebSocket(
-          `ws://${window.location.host}/uptimeSocket`
-        );
-
-        uptimeSocket.onmessage = msg => {
-          uptimeElem.textContent = "Uptime: " + msg;
-        };
-      };
-    </script>
   </head>
 
   <body>
