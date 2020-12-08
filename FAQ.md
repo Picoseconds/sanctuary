@@ -2,11 +2,11 @@
 
 ***1. "Where can I run this server? (besides my computer)"***
 
-Glitch is probably the easiest way to host one of these servers. I recommend disabling projectiles because it tends to create lag and can cause memory leaks on certain providers if you are not careful. You can also use Repl.it, as it's pretty stable. If you want to use glitch, fork this repo and then import it on glitch. Configure the .env file and then you should be fine. If the server doesn't run open the terminal in the glitch project and follow the steps provided in the readme file. Then edit the sanctuary.user.js websocket constructor to conform to your glitch project name (not in the project itself though)
+Glitch is probably the easiest way to host one of these servers. It is recommended that you disable projectiles because it tends to create lag. You can also use Repl.it, as it's pretty stable. If you want to use glitch, fork this repo and then import it on glitch. Configure the .env file and then you should be fine. If the server doesn't run open the terminal in the glitch project and follow the steps provided in the readme file. Then edit the sanctuary.user.js websocket constructor to conform to your glitch project name (not in the project itself though)
 
 ***2. "How do I connect to my server?"***
 
-You may connect to your server by modifying and injecting [sanctuary.user.js](https://github.com/Picoseconds/sanctuary/blob/master/sanctuary.user.js). Edit the websocket constructor to conform to your glitch project name (not in the project-itself though) 
+You may connect to your server by modifying and injecting [sanctuary.user.js](https://github.com/Picoseconds/sanctuary/blob/master/sanctuary.user.js). Edit the websocket constructor to conform to your glitch project name.
 
 
 **Example A:**
@@ -38,6 +38,6 @@ is not much people can do with it. You can also use a floating ip which directs 
 The answer is the same as the last: Host it online using a project-hosting service such as glitch.com. It constantly runs unless there is no user activity. The only 
 downside to this is that it is laggy due to the limited CPU and Ram allocated to the project. (Ex: glitch.com, repl.it)
 
-5. **"How can I connect without a userscript? (a.k.a just with the website)"**
+5. **"How can I connect without a userscript? (a.k.a just via the website)"**
 
 You must create another glitch.me project and then port it that way using either node.js, socket.io, or express.
