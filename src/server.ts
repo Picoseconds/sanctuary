@@ -63,13 +63,16 @@ const app = uWS.App().ws("/*", {
 });
 
 app.get("sanctuary", (res: HttpResponse) => {
-  res.end(
-    nunjucks.render("version.html", {
-      version: VERSION,
-      nodeVersion: process.version,
-      uptime: format(process.uptime()),
-    })
-  );
+  let aborted = false;
+  res.onAborted = ()=>(aborted = true, res);
+  let text = nunjucks.render("version.html", {
+    version: VERSION,
+    nodeVersion: process.version,
+    uptime: format(process.uptime()),
+  });
+  if(aborted)
+    return;
+  res.end(text);
 });
 
 app.get("/uptime", (res: HttpResponse) => {
@@ -77,22 +80,26 @@ app.get("/uptime", (res: HttpResponse) => {
 });
 
 app.get("/api/v1/playerCount", (res: HttpResponse) => {
+  let aborted = false;
+  res.onAborted = ()=>(aborted = true, res);
   let game = getGame();
-
-  if (!game) {
-    res.end(JSON.stringify({ type: "error", message: "No game active." }));
-  } else {
-    res.end(
-      JSON.stringify({ type: "success", playerCount: game.clients.length })
-    );
-  }
+  let text;
+  if (!game)
+    text = JSON.stringify({ type: "error", message: "No game active." });
+  else
+	text = JSON.stringify({ type: "success", playerCount: game.clients.length });
+  if(aborted)
+	return;
+  res.end(text);
 });
 
 app.get("/api/v1/players", (res: HttpResponse) => {
+  let aborted = false;
+  res.onAborted = ()=>(aborted = true, res);
   let game = getGame();
-
+  let text;
   if (!game) {
-    res.end(JSON.stringify({ type: "error", message: "No game active." }));
+    text = JSON.stringify({ type: "error", message: "No game active." });
   } else {
     let clients: {
       clientIPHash: string;
@@ -110,8 +117,11 @@ app.get("/api/v1/players", (res: HttpResponse) => {
       });
     }
 
-    res.end(JSON.stringify({ type: "success", clients: clients }));
+    text = JSON.stringify({ type: "success", clients: clients });
   }
+  if(aborted)
+	return;
+  res.end(text);
 });
 
 app.get("/*", (res: HttpResponse) => {
