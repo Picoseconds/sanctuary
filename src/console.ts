@@ -10,6 +10,7 @@ import {
   string,
   integer,
   argument,
+  greedyString,
 } from "node-brigadier";
 import Player from "./moomoo/Player";
 import { WeaponVariant } from "./moomoo/Weapons";
@@ -27,7 +28,7 @@ dispatcher.register(
 
 dispatcher.register(
   literal("broadcast").then(
-    argument("message", string()).executes((context) => {
+    argument("message", greedyString()).executes((context) => {
       let packetFactory = PacketFactory.getInstance();
       let message = context.getArgument("message", String);
       let game = getGame();
