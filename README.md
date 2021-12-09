@@ -84,3 +84,14 @@ Reports the amount of currently connected clients. Output takes the following fo
   'message': string | undefined
 }
 ```
+
+### Frequently Asked Questions:
+
+<div>
+
+    
+
+See |[FAQ.md](https://github.com/Picoseconds/sanctuary/blob/master/FAQ.md) |
+
+
+</div>
