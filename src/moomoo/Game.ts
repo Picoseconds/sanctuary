@@ -22,6 +22,7 @@ import { getHat } from './Hats';
 import { WeaponVariant } from './Weapons';
 import { ItemType } from '../items/UpgradeItems';
 import { getProjectileRange, getProjectileSpeed } from '../projectiles/projectiles';
+import Agent from './Agent';
 
 let currentGame: Game | null = null;
 
@@ -41,6 +42,9 @@ export default class Game {
   public clients: Client[] = [];
   public lastTick: number = 0;
   public started: boolean = false;
+  public maxScreenWidth: Number = 1920;
+  public maxScreenHeight: Number = 1080;
+  public mapScale = 14400;
   lastUpdate: number = 0;
   physTimer: NanoTimer | undefined;
 
@@ -86,7 +90,7 @@ export default class Game {
     const riverGameObjectTypes = [GameObjectType.Mine];
 
     outerLoop: for (let i = 0; i < 200; i++) {
-      let location = randomPos(14400, 14400);
+      let location = randomPos(this.mapScale, this.mapScale);
       let gameObjectType =
         location.y >= 12e3 ?
           desertGameObjectTypes[Math.floor(Math.random() * desertGameObjectTypes.length)] :
@@ -343,6 +347,38 @@ export default class Game {
     }
   }
 
+  makeAgentUpdateForClient(client: Client, agents: Agent[]) {
+    let agentUpdate: (number | string | null)[] = [];
+
+    if (client.player) {
+
+      for (let ag of agents) {
+        // if (!ag.invisible) {
+          agentUpdate = agentUpdate.concat(ag.getUpdateData());
+        // }
+      }
+    }
+
+    return agentUpdate;
+  }
+
+  sendAgentUpdates() {
+    let packetFactory = PacketFactory.getInstance();
+
+    for (let client of Object.values(this.clients)) {
+      if (client.player){
+        let agentsToUpdate = client.player.getNearbyAgents(this.state);
+        client.socket.send(
+          packetFactory.serializePacket(
+            new Packet(PacketType.UPDATE_ANIMALS, [
+              this.makeAgentUpdateForClient(client, agentsToUpdate),
+            ])
+          )
+        );
+      }
+    }
+  }
+
   sendLeaderboardUpdates() {
     let packetFactory = PacketFactory.getInstance();
     let leaderboardUpdate: (string | number)[] = [];
@@ -372,6 +408,7 @@ export default class Game {
    */
   tick() {
     this.sendPlayerUpdates();
+    this.sendAgentUpdates();
   }
 
   /**
@@ -995,7 +1032,7 @@ export default class Game {
               newPlayer = player;
             }
 
-            newPlayer.location = randomPos(14400, 14400);
+            newPlayer.location = randomPos(this.mapScale, this.mapScale);
             newPlayer.name =
               packet.data[0].name > 15 || packet.data[0].name === ""
                 ? "unknown"

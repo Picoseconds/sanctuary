@@ -63,4 +63,8 @@ function stableSort<T>(array: T[], cmp: Comparator<T> = defaultCmp): T[] {
   return array;
 }
 
-export { SkinColor, eucDistance, randomPos, chunk, stableSort };
+function randInt(min:number, max:number) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+export { SkinColor, eucDistance, randomPos, chunk, stableSort, randInt };

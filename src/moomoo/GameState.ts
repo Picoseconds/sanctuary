@@ -9,6 +9,8 @@ import GameObject from "../gameobjects/GameObject";
 import { PacketType } from "../packets/PacketType";
 import Projectile from "../projectiles/Projectile";
 import { getProjectileSpeed, getProjectileRange } from "../projectiles/projectiles";
+import Agent from "./Agent";
+import { randInt, randomPos } from "./util";
 
 export default class GameState {
   public game: Game;
@@ -16,9 +18,13 @@ export default class GameState {
   public players: Player[] = [];
   public tribes: Tribe[] = [];
   public projectiles: Projectile[] = [];
+  public agents: Agent[] = [];
 
   constructor(game: Game) {
     this.game = game;
+    for(let i=0; i<10; i++){
+      this.addAgentSimple(new Vec2(0,0));
+    }
   }
 
   addProjectile(type: number, location: Vec2, player?: Player, angle = player?.angle, layer = player?.layer) {
@@ -105,6 +111,30 @@ export default class GameState {
   addPlayer(sid: number, ownerID: string, client: Client, game: Game) {
     return this.players[
       this.players.push(new Player(sid, ownerID, new Vec2(0, 0), game, client)) - 1
+    ];
+  }
+
+  // 0: 16 # id
+  // 1: 4 # agenttype
+  // 2: 1761 #posX
+  // 3: 4502 #posY
+  // 4: 3.46 #rot? cuz float
+  // 5: 300 # health
+  // 6: 2 # damage?
+  addAgentSimple(pos?:Vec2){
+    if (typeof pos === "undefined"){
+      pos = randomPos(this.game.mapScale, this.game.mapScale);
+    };
+    return this.addAgent(this.agents.length, randInt(0,5),pos, Math.random()*Math.PI, this.game);
+  }
+
+  addAgent(sid: number, agenttype:number, pos:Vec2, dir:number, game: Game) {
+    if (!pos){
+      pos=randomPos(this.game.mapScale, this.game.mapScale);
+    }
+    return this.agents[
+      this.agents.push(new Agent(sid, agenttype, pos, Math.random()*Math.PI, new Vec2(0,0), this.game))
+      // this.agents.push(new Agent(this.agents.length,  randInt(0,5), , Math.random()*Math.PI, new Vec2(0,0)))
     ];
   }
 

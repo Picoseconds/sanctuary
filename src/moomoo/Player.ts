@@ -28,6 +28,7 @@ import { collideGameObjects } from "./Physics";
 import { getHat } from "./Hats";
 
 export default class Player extends Entity {
+  public scale = 35;
   public name: string;
   public skinColor: SkinColor;
   private _health: number = 100;
@@ -560,5 +561,24 @@ export default class Player extends Entity {
     }
 
     return players;
+  }
+
+  getNearbyAgents(state: GameState) { //careful this does not handle resetting the agent in case of death, has to be handled accordingly
+    const RADIUS = process.env.PLAYER_NEARBY_RADIUS || 1250;
+
+    let agents = [];
+
+    for (let ag of state.agents) {
+      if (
+        eucDistance(
+          [this.location.x, this.location.y],
+          [ag.location.x, ag.location.y]
+        ) < RADIUS
+      ) {
+        agents.push(ag);
+      }
+    }
+
+    return agents;
   }
 }
