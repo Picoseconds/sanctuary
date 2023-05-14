@@ -33,6 +33,7 @@ export default class Player extends Entity {
   public skinColor: SkinColor;
   private _health: number = 100;
   public game: Game;
+  public isPlayer: boolean = true;
 
   public lastPing: number = 0;
   public lastDot = 0;
@@ -543,42 +544,6 @@ export default class Player extends Entity {
   }
 
   getNearbyPlayers(state: GameState) {
-    const RADIUS = process.env.PLAYER_NEARBY_RADIUS || 1250;
-
-    let players = [];
-
-    for (let player of state.players) {
-      if (player !== this && !player.dead) {
-        if (
-          eucDistance(
-            [this.location.x, this.location.y],
-            [player.location.x, player.location.y]
-          ) < RADIUS
-        ) {
-          players.push(player);
-        }
-      }
-    }
-
-    return players;
-  }
-
-  getNearbyAgents(state: GameState) { //careful this does not handle resetting the agent in case of death, has to be handled accordingly
-    const RADIUS = process.env.PLAYER_NEARBY_RADIUS || 1250;
-
-    let agents = [];
-
-    for (let ag of state.agents) {
-      if (
-        eucDistance(
-          [this.location.x, this.location.y],
-          [ag.location.x, ag.location.y]
-        ) < RADIUS
-      ) {
-        agents.push(ag);
-      }
-    }
-
-    return agents;
+    return super.getNearbyPlayers(state, this);
   }
 }

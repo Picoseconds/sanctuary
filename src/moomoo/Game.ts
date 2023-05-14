@@ -46,7 +46,8 @@ export default class Game {
   public maxScreenHeight: Number = 1080;
   public mapScale = 14400;
   public waterCurrent = 0.0011;
-  public riverWidth = 300;
+  public riverWidth = 700;
+  public playerDecel:number = .993;
   lastUpdate: number = 0;
   physTimer: NanoTimer | undefined;
 
@@ -357,6 +358,7 @@ export default class Game {
       for (let ag of agents) {
         // if (!ag.invisible) {
           agentUpdate = agentUpdate.concat(ag.getUpdateData());
+          
         // }
       }
     }
@@ -442,23 +444,30 @@ export default class Game {
   }
 
   updateAgents(deltaTime: number){
-    console.log(deltaTime);
+    // console.log(deltaTime); (in seconds)
     
     this.state.agents.forEach(agent => {
+      agent.update(this, deltaTime)
       //TODO apply respawn logic
       //TODO apply dmgOverTime logic
-      var s = false;
-      var speedMultiplier = 1; //implicit
-      if (!agent.lockMove){//TODO see and add what !this.zIndex means as a condition???
-        if(agent.location.y >= this.mapScale / 2 - this.riverWidth / 2 && agent.location.y <= this.mapScale / 2 + this.riverWidth / 2){
-          speedMultiplier = .33;
-          agent.velocity.add(this.waterCurrent * deltaTime, 0)
+      // var s = false;
+      // var speedMultiplier = 1; //implicit
+      // if (!agent.lockMove){//TODO see and add what !this.zIndex means as a condition???
+
+      //   let rivTop = this.mapScale / 2 - this.riverWidth / 2;
+      //   let rivBottom = this.mapScale / 2 + this.riverWidth / 2;
+        
+      //   if(agent.location.y >= rivTop && agent.location.y <= rivBottom){
+      //     speedMultiplier = .33;
+      //     console.log("within river");
+          
+      //     agent.velocity.add(this.waterCurrent * deltaTime/0.33, 0)
            
-        }
-        if (agent.lockMove){
-          agent.velocity.set(0,0,true) //set speed to 0
-        }
-      }
+      //   }
+      //   if (agent.lockMove){
+      //     agent.velocity.set(0,0,true) //set speed to 0
+      //   }
+      // }
     })
 
   }

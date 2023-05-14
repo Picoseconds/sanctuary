@@ -76,7 +76,7 @@ function tryMovePlayer(player: Player, delta: number, xVel: number, yVel: number
             player.location = randomPos(14400 + 35, 14400 - 35);
             return;
         }
-        if (!hasCollision(gameObj.data)) continue;
+        if (!hasCollision(gameObj.data)) continue;//skip the collision calcs
       }
 
       let dmg = gameObj.dmg;

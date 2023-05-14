@@ -22,7 +22,7 @@ export default class GameState {
 
   constructor(game: Game) {
     this.game = game;
-    for(let i=0; i<10; i++){
+    for(let i=0; i<20; i++){
       this.addAgentSimple(new Vec2(0,7000));
     }
   }
@@ -125,7 +125,7 @@ export default class GameState {
     if (typeof pos === "undefined"){
       pos = randomPos(this.game.mapScale, this.game.mapScale);
     };
-    return this.addAgent(this.agents.length, randInt(0,5),pos, Math.random()*Math.PI, this.game);
+    return this.addAgent(this.agents.length, randInt(6,6),pos, Math.random()*Math.PI*2, this.game);
   }
 
   addAgent(sid: number, agenttype:number, pos:Vec2, dir:number, game: Game) {
