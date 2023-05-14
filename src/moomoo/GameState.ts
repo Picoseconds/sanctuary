@@ -23,7 +23,7 @@ export default class GameState {
   constructor(game: Game) {
     this.game = game;
     for(let i=0; i<10; i++){
-      this.addAgentSimple(new Vec2(0,0));
+      this.addAgentSimple(new Vec2(0,7000));
     }
   }
 

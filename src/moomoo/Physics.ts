@@ -11,6 +11,7 @@ import { PacketFactory } from "../packets/PacketFactory";
 import Projectile from "../projectiles/Projectile";
 import { getGame } from "./Game";
 import { randomPos } from "./util";
+import Agent from "./Agent";
 
 function collideCircles(pos1: Vec2, r1: number, pos2: Vec2, r2: number) {
   return pos1.distance(pos2) <= r1 + r2;
@@ -138,9 +139,9 @@ function tryMovePlayer(player: Player, delta: number, xVel: number, yVel: number
       player.velocity.add(0.0011 * delta * (1 / .33), 0);
     }
   }
-
-  newLocation.clamp(new Vec2(0 + 35, 0 + 35), new Vec2(14400 - 35, 14400 - 35));
-  player.location = newLocation.add(delta * xVel, delta * yVel);
+  newLocation.add(delta * xVel, delta * yVel);
+  newLocation.clamp(new Vec2(35, 35), new Vec2(player.game.mapScale - 35, player.game.mapScale - 35));
+  player.location = newLocation
 }
 
 function movePlayer(player: Player, delta: number, state: GameState) {

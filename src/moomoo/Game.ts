@@ -45,6 +45,8 @@ export default class Game {
   public maxScreenWidth: Number = 1920;
   public maxScreenHeight: Number = 1080;
   public mapScale = 14400;
+  public waterCurrent = 0.0011;
+  public riverWidth = 300;
   lastUpdate: number = 0;
   physTimer: NanoTimer | undefined;
 
@@ -437,6 +439,28 @@ export default class Game {
         )
       );
     }
+  }
+
+  updateAgents(deltaTime: number){
+    console.log(deltaTime);
+    
+    this.state.agents.forEach(agent => {
+      //TODO apply respawn logic
+      //TODO apply dmgOverTime logic
+      var s = false;
+      var speedMultiplier = 1; //implicit
+      if (!agent.lockMove){//TODO see and add what !this.zIndex means as a condition???
+        if(agent.location.y >= this.mapScale / 2 - this.riverWidth / 2 && agent.location.y <= this.mapScale / 2 + this.riverWidth / 2){
+          speedMultiplier = .33;
+          agent.velocity.add(this.waterCurrent * deltaTime, 0)
+           
+        }
+        if (agent.lockMove){
+          agent.velocity.set(0,0,true) //set speed to 0
+        }
+      }
+    })
+
   }
 
   updateProjectiles(deltaTime: number) {
@@ -863,6 +887,7 @@ export default class Game {
 
   physUpdate() {
     this.updateProjectiles(.1);
+    this.updateAgents(.1)
   }
 
   /**
