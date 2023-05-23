@@ -22,6 +22,7 @@ import { getHat } from './Hats';
 import { WeaponVariant } from './Weapons';
 import { ItemType } from '../items/UpgradeItems';
 import { getProjectileRange, getProjectileSpeed } from '../projectiles/projectiles';
+import Agent from './Agent';
 
 let currentGame: Game | null = null;
 
@@ -41,6 +42,12 @@ export default class Game {
   public clients: Client[] = [];
   public lastTick: number = 0;
   public started: boolean = false;
+  public maxScreenWidth: Number = 1920;
+  public maxScreenHeight: Number = 1080;
+  public mapScale = 14400;
+  public waterCurrent = 0.0011;
+  public riverWidth = 700;
+  public playerDecel:number = .993;
   lastUpdate: number = 0;
   physTimer: NanoTimer | undefined;
 
@@ -86,7 +93,7 @@ export default class Game {
     const riverGameObjectTypes = [GameObjectType.Mine];
 
     outerLoop: for (let i = 0; i < 200; i++) {
-      let location = randomPos(14400, 14400);
+      let location = randomPos(this.mapScale, this.mapScale);
       let gameObjectType =
         location.y >= 12e3 ?
           desertGameObjectTypes[Math.floor(Math.random() * desertGameObjectTypes.length)] :
@@ -343,6 +350,39 @@ export default class Game {
     }
   }
 
+  makeAgentUpdateForClient(client: Client, agents: Agent[]) {
+    let agentUpdate: (number | string | null)[] = [];
+
+    if (client.player) {
+
+      for (let ag of agents) {
+        // if (!ag.invisible) {
+          agentUpdate = agentUpdate.concat(ag.getUpdateData());
+          
+        // }
+      }
+    }
+
+    return agentUpdate;
+  }
+
+  sendAgentUpdates() {
+    let packetFactory = PacketFactory.getInstance();
+
+    for (let client of Object.values(this.clients)) {
+      if (client.player){
+        let agentsToUpdate = client.player.getNearbyAgents(this.state);
+        client.socket.send(
+          packetFactory.serializePacket(
+            new Packet(PacketType.UPDATE_ANIMALS, [
+              this.makeAgentUpdateForClient(client, agentsToUpdate),
+            ])
+          )
+        );
+      }
+    }
+  }
+
   sendLeaderboardUpdates() {
     let packetFactory = PacketFactory.getInstance();
     let leaderboardUpdate: (string | number)[] = [];
@@ -372,6 +412,7 @@ export default class Game {
    */
   tick() {
     this.sendPlayerUpdates();
+    this.sendAgentUpdates();
   }
 
   /**
@@ -400,6 +441,35 @@ export default class Game {
         )
       );
     }
+  }
+
+  updateAgents(deltaTime: number){
+    // console.log(deltaTime); (in seconds)
+    
+    this.state.agents.forEach(agent => {
+      agent.update(this, deltaTime)
+      //TODO apply respawn logic
+      //TODO apply dmgOverTime logic
+      // var s = false;
+      // var speedMultiplier = 1; //implicit
+      // if (!agent.lockMove){//TODO see and add what !this.zIndex means as a condition???
+
+      //   let rivTop = this.mapScale / 2 - this.riverWidth / 2;
+      //   let rivBottom = this.mapScale / 2 + this.riverWidth / 2;
+        
+      //   if(agent.location.y >= rivTop && agent.location.y <= rivBottom){
+      //     speedMultiplier = .33;
+      //     console.log("within river");
+          
+      //     agent.velocity.add(this.waterCurrent * deltaTime/0.33, 0)
+           
+      //   }
+      //   if (agent.lockMove){
+      //     agent.velocity.set(0,0,true) //set speed to 0
+      //   }
+      // }
+    })
+
   }
 
   updateProjectiles(deltaTime: number) {
@@ -826,6 +896,7 @@ export default class Game {
 
   physUpdate() {
     this.updateProjectiles(.1);
+    this.updateAgents(.1)
   }
 
   /**
@@ -995,7 +1066,7 @@ export default class Game {
               newPlayer = player;
             }
 
-            newPlayer.location = randomPos(14400, 14400);
+            newPlayer.location = randomPos(this.mapScale, this.mapScale);
             newPlayer.name =
               packet.data[0].name > 15 || packet.data[0].name === ""
                 ? "unknown"

@@ -1,0 +1,176 @@
+[
+    {
+        "id": 0,
+        "src": "cow_1",
+        "killScore": 150,
+        "health": 500,
+        "weightM": 0.8,
+        "speed": 95e-5,
+        "turnSpeed": 0.001,
+        "scale": 72,
+        "drop": [
+            "food",
+            50
+        ]
+    },
+    {
+        "id": 1,
+        "src": "pig_1",
+        "killScore": 200,
+        "health": 800,
+        "weightM": 0.6,
+        "speed": 85e-5,
+        "turnSpeed": 0.001,
+        "scale": 72,
+        "drop": [
+            "food",
+            80
+        ]
+    },
+    {
+        "id": 2,
+        "name": "Bull",
+        "src": "bull_2",
+        "hostile": true,
+        "dmg": 20,
+        "killScore": 1e3,
+        "health": 1800,
+        "weightM": 0.5,
+        "speed": 94e-5,
+        "turnSpeed": 74e-5,
+        "scale": 78,
+        "viewRange": 800,
+        "chargePlayer": true,
+        "drop": [
+            "food",
+            100
+        ]
+    },
+    {
+        "id": 3,
+        "name": "Bully",
+        "src": "bull_1",
+        "hostile": true,
+        "dmg": 20,
+        "killScore": 2e3,
+        "health": 2800,
+        "weightM": 0.45,
+        "speed": 0.001,
+        "turnSpeed": 8e-4,
+        "scale": 90,
+        "viewRange": 900,
+        "chargePlayer": true,
+        "drop": [
+            "food",
+            400
+        ]
+    },
+    {
+        "id": 4,
+        "name": "Wolf",
+        "src": "wolf_1",
+        "hostile": true,
+        "dmg": 8,
+        "killScore": 500,
+        "health": 300,
+        "weightM": 0.45,
+        "speed": 0.001,
+        "turnSpeed": 0.002,
+        "scale": 84,
+        "viewRange": 800,
+        "chargePlayer": true,
+        "drop": [
+            "food",
+            200
+        ]
+    },
+    {
+        "id": 5,
+        "name": "Quack",
+        "src": "chicken_1",
+        "dmg": 8,
+        "killScore": 2e3,
+        "noTrap": true,
+        "health": 300,
+        "weightM": 0.2,
+        "speed": 0.0018,
+        "turnSpeed": 0.006,
+        "scale": 70,
+        "drop": [
+            "food",
+            100
+        ]
+    },
+    {
+        "id": 6,
+        "name": "MOOSTAFA",
+        "nameScale": 50,
+        "src": "enemy",
+        "hostile": true,
+        "dontRun": true,
+        "fixedSpawn": true,
+        "spawnDelay": 6e4,
+        "noTrap": true,
+        "colDmg": 100,
+        "dmg": 40,
+        "killScore": 8e3,
+        "health": 18e3,
+        "weightM": 0.4,
+        "speed": 7e-4,
+        "turnSpeed": 0.01,
+        "scale": 80,
+        "spriteMlt": 1.8,
+        "leapForce": 0.9,
+        "viewRange": 1e3,
+        "hitRange": 210,
+        "hitDelay": 1e3,
+        "chargePlayer": true,
+        "drop": [
+            "food",
+            100
+        ]
+    },
+    {
+        "id": 7,
+        "name": "Treasure",
+        "hostile": true,
+        "nameScale": 35,
+        "src": "crate_1",
+        "fixedSpawn": true,
+        "spawnDelay": 12e4,
+        "colDmg": 200,
+        "killScore": 5e3,
+        "health": 2e4,
+        "weightM": 0.1,
+        "speed": 0,
+        "turnSpeed": 0,
+        "scale": 70,
+        "spriteMlt": 1
+    },
+    {
+        "id": 8,
+        "name": "MOOFIE",
+        "src": "wolf_2",
+        "hostile": true,
+        "fixedSpawn": true,
+        "dontRun": true,
+        "hitScare": 4,
+        "spawnDelay": 3e4,
+        "noTrap": true,
+        "nameScale": 35,
+        "dmg": 10,
+        "colDmg": 100,
+        "killScore": 3e3,
+        "health": 7e3,
+        "weightM": 0.45,
+        "speed": 0.0015,
+        "turnSpeed": 0.002,
+        "scale": 90,
+        "viewRange": 800,
+        "chargePlayer": true,
+        "drop": [
+            "food",
+            1e3
+        ]
+    }
+]

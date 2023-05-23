@@ -28,10 +28,12 @@ import { collideGameObjects } from "./Physics";
 import { getHat } from "./Hats";
 
 export default class Player extends Entity {
+  public scale = 35;
   public name: string;
   public skinColor: SkinColor;
   private _health: number = 100;
   public game: Game;
+  public isPlayer: boolean = true;
 
   public lastPing: number = 0;
   public lastDot = 0;
@@ -542,23 +544,6 @@ export default class Player extends Entity {
   }
 
   getNearbyPlayers(state: GameState) {
-    const RADIUS = process.env.PLAYER_NEARBY_RADIUS || 1250;
-
-    let players = [];
-
-    for (let player of state.players) {
-      if (player !== this && !player.dead) {
-        if (
-          eucDistance(
-            [this.location.x, this.location.y],
-            [player.location.x, player.location.y]
-          ) < RADIUS
-        ) {
-          players.push(player);
-        }
-      }
-    }
-
-    return players;
+    return super.getNearbyPlayers(state, this);
   }
 }

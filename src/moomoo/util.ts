@@ -63,4 +63,16 @@ function stableSort<T>(array: T[], cmp: Comparator<T> = defaultCmp): T[] {
   return array;
 }
 
-export { SkinColor, eucDistance, randomPos, chunk, stableSort };
+function randInt(min:number, max:number) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+function randFloat(min:number, max:number) {
+ let cal = (Math.random() * (max - min) + min);
+ return cal;
+}
+
+function getAngle(x1:number, y1:number, x2:number, y2:number){
+  return Math.atan2(y2 - y1, x2 - x1);
+}
+
+export { SkinColor, eucDistance, randomPos, chunk, stableSort, randInt, randFloat, getAngle };
