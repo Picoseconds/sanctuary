@@ -125,7 +125,7 @@ export default class GameState {
     if (typeof pos === "undefined"){
       pos = randomPos(this.game.mapScale, this.game.mapScale);
     };
-    return this.addAgent(this.agents.length, randInt(6,6),pos, Math.random()*Math.PI*2, this.game);
+    return this.addAgent(this.agents.length, randInt(3,6),pos, Math.random()*Math.PI*2, this.game);
   }
 
   addAgent(sid: number, agenttype:number, pos:Vec2, dir:number, game: Game) {

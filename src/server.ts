@@ -13,6 +13,8 @@ import { startServer } from './moomoo/moomoo';
 import { getGame } from './moomoo/Game';
 import { TextEncoder } from 'util';
 
+import path from 'path';
+
 const app = express();
 const server = http.createServer(app);
 const port = process.env.PORT;
@@ -33,6 +35,14 @@ function format(timestamp: number) {
 
   return hours.toString().padStart(2, '0') + ':' + minutes.toString().padStart(2, '0') + ':' + seconds.toString().padStart(2, '0');
 }
+
+app.get('/customclient', (req, res) => {
+  // res.send("eeee");
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Cache-Control', 'no-store')
+  res.sendFile(path.resolve(__dirname, '../src/customclient.js'));
+  return;
+});
 
 app.get('/sanctuary', (req, res) => {
   if (req.accepts('html')) {

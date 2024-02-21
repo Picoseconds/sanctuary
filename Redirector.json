@@ -1,0 +1,42 @@
+{
+    "createdBy": "Redirector v3.5.3",
+    "createdAt": "2024-02-21T15:42:52.335Z",
+    "redirects": [
+        {
+            "description": "moomoo",
+            "exampleUrl": "https://moomoo.io/assets/index-fkjeh222rkg.js",
+            "exampleResult": "https://7953-128-78-208-189.ngrok-free.app/customclient",
+            "error": null,
+            "includePattern": "https://moomoo.io/assets/index-*.js",
+            "excludePattern": "",
+            "patternDesc": "none",
+            "redirectUrl": "https://7953-128-78-208-189.ngrok-free.app/customclient",
+            "patternType": "W",
+            "processMatches": "noProcessing",
+            "disabled": false,
+            "grouped": false,
+            "appliesTo": [
+                "main_frame",
+                "script"
+            ]
+        },
+        {
+            "description": "block challenges_cloudflare",
+            "exampleUrl": "https://challenges.cloudflare.com/turnstile/v0/api.js",
+            "exampleResult": "https://example.com",
+            "error": null,
+            "includePattern": "https://challenges.cloudflare.com/*",
+            "excludePattern": "",
+            "patternDesc": "",
+            "redirectUrl": "https://example.com",
+            "patternType": "W",
+            "processMatches": "noProcessing",
+            "disabled": true,
+            "grouped": false,
+            "appliesTo": [
+                "main_frame",
+                "script"
+            ]
+        }
+    ]
+}
