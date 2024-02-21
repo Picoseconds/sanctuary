@@ -197,13 +197,13 @@ export default class Game {
             )
           );
         } else {
-          this.kickClient(
-            client,
-            "Kicked for hacks"
-          );
+          // this.kickClient(
+          //   client,
+          //   "Kicked for hacks"
+          // );
         }
       } catch (e) {
-        this.kickClient(client, "Kicked for hacks");
+        // this.kickClient(client, "Kicked for hacks");
       }
     });
 
@@ -1040,8 +1040,22 @@ export default class Game {
     let packetFactory = PacketFactory.getInstance();
 
     switch (packet.type) {
+      case PacketType.PING:
+        let player = this.state.players.find(
+          (plr) => plr.ownerID === client.id
+        );
+        if (player==undefined){
+          console.log("player is undefined, check Game.ts for weird shit happening");       
+          return;   
+        }
+        player.client?.socket.send(
+          packetFactory.serializePacket(
+            new Packet(PacketType.PING, [])
+          )
+        );
+
       case PacketType.SPAWN:
-        if (client.player && !client.player.dead) this.kickClient(client, "Kicked for hacks");
+        // if (client.player && !client.player.dead) this.kickClient(client, "Kicked for hacks");
 
         if (
           "name" in packet.data[0] &&
@@ -1136,7 +1150,7 @@ export default class Game {
             client.player.isAttacking = false;
           }
         } else {
-          this.kickClient(client, "Kicked for hacks");
+          // this.kickClient(client, "Kicked for hacks");
         }
         break;
       case PacketType.PLAYER_MOVE:
@@ -1150,7 +1164,7 @@ export default class Game {
         if (client.player) client.player.angle = packet.data[0];
         break;
       case PacketType.CHAT:
-        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
+        // if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
 
         for (let badWord of badWords) {
           if (packet.data[0].includes(badWord))
@@ -1174,7 +1188,7 @@ export default class Game {
         }
         break;
       case PacketType.CLAN_CREATE:
-        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
+        // if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
 
         if (client.player) {
           let tribe = this.state.addTribe(packet.data[0], client.player.id);
@@ -1193,7 +1207,7 @@ export default class Game {
         }
         break;
       case PacketType.CLAN_REQ_JOIN:
-        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
+        // if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
 
         if (client.player && client.player.clanName === null) {
           let tribe = this.state.tribes.find(
@@ -1213,11 +1227,11 @@ export default class Game {
             )
           }
         } else {
-          this.kickClient(client, "Kicked for hacks")
+          // this.kickClient(client, "Kicked for hacks")
         }
         break;
       case PacketType.CLAN_ACC_JOIN:
-        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
+        // if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
 
         if (client.tribeJoinQueue.length && client.player && packet.data[1]) {
           let tribe = this.state.tribes.find(
@@ -1284,7 +1298,7 @@ export default class Game {
                 client.player.lastHitTime = 0;
               client.player.selectedWeapon = client.player.secondaryWeapon;
             } else {
-              this.kickClient(client, "Kicked for hacks");
+              // this.kickClient(client, "Kicked for hacks");
             }
           } else {
             let itemCost = getItemCost(packet.data[0]);
@@ -1316,7 +1330,7 @@ export default class Game {
         }
         break;
       case PacketType.LEAVE_CLAN:
-        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
+        // if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
 
         if (client.player) {
           let tribeIndex = this.state.tribes.findIndex(tribe => tribe.membersSIDs.includes(client.player?.id as number));
@@ -1331,7 +1345,7 @@ export default class Game {
         }
         break;
       case PacketType.BUY_AND_EQUIP:
-        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
+        // if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
 
         let isAcc = packet.data[2];
 
@@ -1339,14 +1353,14 @@ export default class Game {
         if (isAcc) return;
 
         if ((!getHat(packet.data[1]) || getHat(packet.data[1])?.dontSell) && packet.data[1] !== 0) {
-          this.kickClient(client, "Kicked for hacks");
+          // this.kickClient(client, "Kicked for hacks");
           return;
         }
 
         if (client.player) {
           if (packet.data[0]) {
             if (client.ownedHats.includes(packet.data[1])) {
-              this.kickClient(client, "Kicked for hacks");
+              // this.kickClient(client, "Kicked for hacks");
             } else {
               if (client.player.points >= (getHat(packet.data[1])?.price || 0)) {
                 client.player.points -= getHat(packet.data[1])?.price || 0;
@@ -1387,30 +1401,30 @@ export default class Game {
                 );
               }
             } else {
-              this.kickClient(client, "Kicked for hacks");
+              // this.kickClient(client, "Kicked for hacks");
             }
           }
         }
         break;
       case PacketType.CLAN_KICK:
-        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
+        // if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
 
         if (client.player) {
           let tribeIndex = this.state.tribes.findIndex(tribe => tribe.ownerSID == client.player?.id);
           let tribe = this.state.tribes[tribeIndex];
 
-          if (tribeIndex < 0) this.kickClient(client, "Kicked for hacks");
-          if (!tribe?.membersSIDs.includes(packet.data[0])) this.kickClient(client, "Kicked for hacks");
+          // if (tribeIndex < 0) this.kickClient(client, "Kicked for hacks");
+          // if (!tribe?.membersSIDs.includes(packet.data[0])) this.kickClient(client, "Kicked for hacks");
 
           let player = this.state.players.find(player => player.id == packet.data[0]);
-          if (!player) this.kickClient(client, "Kicked for hacks");
+          // if (!player) this.kickClient(client, "Kicked for hacks");
 
           if (player)
             this.state.leaveClan(player, tribeIndex);
         }
         break;
       case PacketType.SELECT_UPGRADE:
-        if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
+        // if (!client.player || client.player.dead) this.kickClient(client, "Kicked for hacks");
 
         if (client.player) {
           let item = packet.data[0] as number;
@@ -1422,7 +1436,7 @@ export default class Game {
               let preItem = getPrerequisiteWeapon(item);
 
               if (preItem) {
-                if (!(client.player.weapon == preItem || client.player.secondaryWeapon == preItem)) this.kickClient(client, "Kicked for hacks");
+                // if (!(client.player.weapon == preItem || client.player.secondaryWeapon == preItem)) this.kickClient(client, "Kicked for hacks");
               }
 
               if (Object.values(PrimaryWeapons).includes(item)) {
@@ -1439,7 +1453,7 @@ export default class Game {
                 client.player.secondaryWeaponExp = 0;
               }
             } else {
-              this.kickClient(client, "Kicked for hacks");
+              // this.kickClient(client, "Kicked for hacks");
             }
           } else {
             item -= 16;
@@ -1447,13 +1461,13 @@ export default class Game {
               let preItem = getPrerequisiteItem(item);
 
               if (preItem) {
-                if (!client.player.items.includes(item - preItem)) this.kickClient(client, "Kicked for hacks");
+                // if (!client.player.items.includes(item - preItem)) this.kickClient(client, "Kicked for hacks");
               }
 
               client.player.items[getGroupID(item)] = item;
               client.player.items = client.player.items.filter(playerItem => playerItem != undefined);
             } else {
-              this.kickClient(client, "Kicked for hacks");
+              // this.kickClient(client, "Kicked for hacks");
             }
           }
 
@@ -1496,7 +1510,7 @@ export default class Game {
             );
           }
         } else {
-          this.kickClient(client, "Kicked for hacks");
+          // this.kickClient(client, "Kicked for hacks");
         }
         break;
     }

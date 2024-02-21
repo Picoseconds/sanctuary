@@ -1582,7 +1582,7 @@ window.vultr = vultr
         p = n(57),
         g = n(58).obj,
         m = new a.TextManager,
-        y = new(n(59))("moomoo.io", 3e3, o.maxPlayers, 5, !1);
+        y = new(n(59))("moomoo.io", 3e3, o.maxPlayers, 5, !1); //INITIALIZE THE SERVER OBJECT? #YESS y is the object i search
     y.debugLog = !1;
     var k = !1;
 
@@ -1591,9 +1591,22 @@ window.vultr = vultr
     }
 
     function w(e) {
-        y.start((function(t, n, a) {
-            var c = "ws://localhost:3000/mooomoo";
-            c = "wss://7953-128-78-208-189.ngrok-free.app/moomoo"
+        y.start((function(t, n, a, c=null) {
+            
+            if (c==null){
+                //use url arg "server"
+                let urlc = new URLSearchParams(window.location.search).get("server");
+                
+                if (urlc==null){
+                    console.log("NO SERVER URL FOUND");
+                    c = "ws://localhost:3000/mooomoo";
+                    c = "wss://7953-128-78-208-189.ngrok-free.app/moomoo"; //last prevails (ws doesn't work anyway for localhost)
+                } else{
+                    console.log("FOUND IN URL: ",urlc);
+                    c="wss://"+urlc+"/moomoo"
+                }
+
+            }
             // e && (c += "&token=" + encodeURIComponent(e)), r.connect(c, (function(e) {
             // MODIFIED, see above
             e && r.connect(c, (function(e) {
@@ -1859,8 +1872,41 @@ window.vultr = vultr
         return !1
     };
 
+    //MODIFED, THIS IS A NEW FEATURE
+    function customnewfeaturenooverridelongname(){
+        let  inpdiv = document.createElement("div");
+        let inp = document.createElement("input");
+        let inpbutton = document.createElement("button");
+        inpbutton.innerHTML = "Join";
+
+        inpbutton.addEventListener("click", function(){
+            let serverip = inp.value;
+            if(serverip){
+                //TODO: ping the server
+                window.history.replaceState({}, "", "/?server=" + encodeURIComponent(serverip));
+                y.callback(0,0,0, serverip);//this should start the server correctly
+            }
+        });
+
+        let stylediveee = document.createElement("style");
+        stylediveee.innerHTML = `
+        #custom-server-addr-id {
+            background-color: #3d3f42;
+        }
+        `;
+        
+        inp.id = "custom-server-addr-id";
+        inp.setAttribute("placeholder", "server ip");
+        inpdiv.appendChild(inp);
+        inpdiv.appendChild(inpbutton);
+        inpdiv.appendChild(stylediveee);
+        xe.appendChild(inpdiv);
+    };
+    customnewfeaturenooverridelongname();
+
     function pt() {
         //MODIFIED, don't add servers to the server list
+        
         // var e, t, n = "",
         //     i = 0;
         // for (var r in y.servers) {
@@ -1889,10 +1935,11 @@ window.vultr = vultr
         //     4 == this.readyState && (200 == this.status ? (window.vultr = JSON.parse(this.responseText), y.processServers(vultr.servers), pt()) : console.error("Failed to load server data with status code:", this.status))
         // }, e.open("GET", "/serverData", !0), e.send()
     }
-    xe.addEventListener("change", s.checkTrusted((function() {
-        let e = xe.value.split(":");
-        y.switchServer(e[0], e[1], e[2])
-    })));
+    //MODIFIED, REMOVED SERVER SELECTION UPDATES
+    // xe.addEventListener("change", s.checkTrusted((function() {
+    //     let e = xe.value.split(":");
+    //     y.switchServer(e[0], e[1], e[2])
+    // })));
     var mt = document.getElementById("pre-content-container"),
         yt = null,
         kt = null;
@@ -5714,6 +5761,7 @@ window.vultr = vultr
         }
     }, s.prototype.start = function(e, t) {
         //modified
+        
         this.callback = e, this.errorCallback = t;
         this.connect(0, 0, 0);
         return;
@@ -5807,7 +5855,7 @@ window.vultr = vultr
             // var i = this.findServer(e, t);
             //n is game index, doesn't matter
             let n = 0;
-            this.callback("localhost", 3000, n);
+            this.callback(1,2,3); //callback doesn't care about  what  we give it anymore
             return;
             //MODIFIED
             null != i ? (this.log("Connecting to server", i, "with game index", n), 'i.games[n].playerCount >= this.lobbySize ? this.errorCallback("Server is already full.") :', (window.history.replaceState(document.title, document.title, this.generateHref(e, t, n, this.password)), this.server = i, this.gameIndex = n, this.log("Calling callback with address", this.serverAddress(i.ip), "on port", this.serverPort(i), "with game index", n), this.callback(this.serverAddress(i.ip), this.serverPort(i), n))) : this.errorCallback("Failed to find server for region " + e + " and index " + t)

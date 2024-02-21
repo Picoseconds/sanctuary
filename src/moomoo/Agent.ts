@@ -275,17 +275,17 @@ export default class Agent extends Entity {
         
         let packetFactory = PacketFactory.getInstance();
 
-        for (let player_to_log of game.state.players){
+        // for (let player_to_log of game.state.players){
 
-            player_to_log.client?.socket.send(
-                packetFactory.serializePacket(
-                  new Packet(
-                    PacketType.CHAT,
-                    [this.id, deltaTime.toFixed(4).toString()]
-                  )
-                )
-              );
-        }
+        //     player_to_log.client?.socket.send(
+        //         packetFactory.serializePacket(
+        //           new Packet(
+        //             PacketType.CHAT,
+        //             [this.id, deltaTime.toFixed(4).toString()]
+        //           )
+        //         )
+        //       );
+        // }
 
         newLocation.add(deltaTime * this.velocity.x, deltaTime * this.velocity.y);
 
