@@ -1045,7 +1045,7 @@ export default class Game {
           (plr) => plr.ownerID === client.id
         );
         if (player==undefined){
-          console.log("player is undefined, check Game.ts for weird shit happening");       
+          // console.log("player is undefined, check Game.ts for weird shit happening");       
           return;   
         }
         player.client?.socket.send(

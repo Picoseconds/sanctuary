@@ -40,7 +40,17 @@ app.get('/customclient', (req, res) => {
   // res.send("eeee");
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Cache-Control', 'no-store')
+  res.setHeader('Content-Type', "text/javascript")
   res.sendFile(path.resolve(__dirname, '../src/customclient.js'));
+  return;
+});
+
+app.head('/customclient', (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Cache-Control', 'no-store')
+  //mimetype
+  res.setHeader('Content-Type', "text/javascript")
+  res.send("");
   return;
 });
 
