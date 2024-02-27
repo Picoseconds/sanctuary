@@ -1,4 +1,4 @@
-# sanctuary [![Maintenance](https://img.shields.io/badge/Maintained%3F-no-inactive.svg)](https://GitHub.com/FuriousBird/sanctuary/graphs/commit-activity) [![Written in TypeScript](https://img.shields.io/badge/types-typescript-success)](https://github.com/microsoft/TypeScript/)
+# sanctuary [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-active.svg)](https://GitHub.com/FuriousBird/sanctuary/graphs/commit-activity) [![Written in TypeScript](https://img.shields.io/badge/types-typescript-success)](https://github.com/microsoft/TypeScript/)
 Sanctuary is a private server implementation for the game MooMoo.io.
 
 ## Features
